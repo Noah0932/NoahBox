@@ -1,6 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { createRoot } from 'react-dom/client';
 
+// 主题切换组件
+function ThemeToggle() {
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+    applyTheme(savedTheme);
+  }, []);
+
+  const applyTheme = (newTheme) => {
+    if (newTheme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else if (newTheme === 'system') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', systemPrefersDark ? 'dark' : 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  };
+
+  const toggleTheme = () => {
+    const themes = ['light', 'dark', 'system'];
+    const currentIndex = themes.indexOf(theme);
+    const nextTheme = themes[(currentIndex + 1) % themes.length];
+    
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    applyTheme(nextTheme);
+  };
+
+  const getThemeIcon = () => {
+    switch (theme) {
+      case 'dark': return 'bi-moon-fill';
+      case 'system': return 'bi-circle-half';
+      default: return 'bi-sun-fill';
+    }
+  };
+
+  const getThemeText = () => {
+    switch (theme) {
+      case 'dark': return '深色';
+      case 'system': return '系统';
+      default: return '浅色';
+    }
+  };
+
+  return (
+    <button className="theme-toggle-btn" onClick={toggleTheme} title={`当前: ${getThemeText()}模式`}>
+      <i className={`bi ${getThemeIcon()}`}></i>
+      <span className="theme-text">{getThemeText()}</span>
+    </button>
+  );
+}
+
 function AdminPanel() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,15 +81,26 @@ function AdminPanel() {
   const checkAuth = async () => {
     try {
       const sessionId = localStorage.getItem('sessionId');
+      if (!sessionId) {
+        window.location.href = '/login.html';
+        return;
+      }
+      
       const response = await fetch('/api/auth/status', {
         headers: {
           'X-Session-ID': sessionId
         }
       });
-      if (!response.ok) {
+      
+      const data = await response.json();
+      if (!response.ok || !data.authenticated) {
+        localStorage.removeItem('sessionId');
         window.location.href = '/login.html';
+        return;
       }
     } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.removeItem('sessionId');
       window.location.href = '/login.html';
     }
   };
@@ -477,6 +543,11 @@ function AdminPanel() {
 
           <div className="nav-section">
             <div className="nav-section-title">系统设置</div>
+            <div className="nav-item">
+              <div className="nav-link" style={{padding: '8px 16px'}}>
+                <ThemeToggle />
+              </div>
+            </div>
             <div className="nav-item">
               <a href="/change-password.html" className="nav-link">
                 <i className="nav-icon bi bi-shield-lock"></i>
