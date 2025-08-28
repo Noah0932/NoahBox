@@ -1,0 +1,21 @@
+name = "download-station-api"
+main = "src/index.js"
+compatibility_date = "2023-08-01"
+
+[vars]
+CORS_ORIGIN = "https://your-frontend-domain.com"
+ADMIN_USERNAME = "admin"
+ADMIN_PASSWORD = "your-secure-password"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "download-station-db"
+database_id = "your-database-id-here"
+
+[build]
+command = "npm run build"
+
+# 自定义域名配置
+# routes = [
+#   { pattern = "api.yourdomain.com/*", zone_name = "yourdomain.com" }
+# ]

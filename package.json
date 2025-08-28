@@ -1,0 +1,65 @@
+{
+  "name": "download-station",
+  "version": "1.0.0",
+  "description": "美观的下载站，使用Cloudflare D1数据库",
+  "main": "src/backend/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "npm run build:home && npm run build:downloads && npm run build:admin && npm run build:backend",
+    "build:all": "npm run build:home && npm run build:downloads && npm run build:admin",
+    "build:home": "esbuild src/frontend/home.jsx --bundle --outfile=public/home-bundle.js",
+    "build:downloads": "esbuild src/frontend/downloads.jsx --bundle --outfile=public/downloads-bundle.js",
+    "build:admin": "esbuild src/frontend/admin.jsx --bundle --outfile=public/admin-bundle.js",
+    "build:login": "esbuild src/frontend/login.jsx --bundle --outfile=public/login-bundle.js",
+    "build:change-password": "esbuild src/frontend/change-password.jsx --bundle --outfile=public/change-password-bundle.js",
+    "build:backend": "esbuild src/backend/index.js --bundle --outfile=dist/index.js --format=esm --external:__STATIC_CONTENT_MANIFEST",
+    "deploy": "wrangler deploy",
+    "lint": "eslint src/ --ext .js,.jsx,.ts,.tsx",
+    "lint:fix": "eslint src/ --ext .js,.jsx,.ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,md}\"",
+    "test": "echo \"Tests will be added soon\" && exit 0",
+    "test:coverage": "echo \"Coverage tests will be added soon\" && exit 0",
+    "prepare": "npm run build",
+    "precommit": "npm run lint && npm run format:check"
+  },
+  "dependencies": {
+    "hono": "^3.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.19.2",
+    "wrangler": "^3.5.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.0.0"
+  },
+  "keywords": [
+    "download-station",
+    "cloudflare-workers",
+    "d1-database",
+    "react",
+    "file-sharing",
+    "download-manager",
+    "web-app"
+  ],
+  "author": "Download Station Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/download-station.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/download-station/issues"
+  },
+  "homepage": "https://github.com/your-username/download-station#readme",
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "download-station-api",
+  "description": "Download Station API - 阿里云 ESA 边缘函数",
+  "runtime": "nodejs18",
+  "handler": "index.handler",
+  "timeout": 30,
+  "memorySize": 128,
+  "environment": {
+    "CORS_ORIGIN": "https://your-frontend-domain.com",
+    "ADMIN_USERNAME": "admin", 
+    "ADMIN_PASSWORD": "your-secure-password",
+    "DATABASE_URL": "your-database-connection-string"
+  },
+  "triggers": [
+    {
+      "type": "http",
+      "config": {
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "path": "/api/*"
+      }
+    }
+  ]
+}
