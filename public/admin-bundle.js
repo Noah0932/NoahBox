@@ -23600,9 +23600,128 @@
           return "\u6D45\u8272";
       }
     };
-    return /* @__PURE__ */ import_react.default.createElement("button", { className: "theme-toggle-btn", onClick: toggleTheme, title: `\u5F53\u524D: ${getThemeText()}\u6A21\u5F0F` }, /* @__PURE__ */ import_react.default.createElement("i", { className: `bi ${getThemeIcon()}` }), /* @__PURE__ */ import_react.default.createElement("span", { className: "theme-text" }, getThemeText()));
+    return /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        onClick: toggleTheme,
+        className: "theme-toggle-btn",
+        title: `\u5F53\u524D\u4E3B\u9898: ${getThemeText()}`
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: getThemeIcon() }),
+      /* @__PURE__ */ import_react.default.createElement("span", null, getThemeText())
+    );
   }
-  function AdminPanel() {
+  function PasswordModal({ isOpen, onClose, sessionId }) {
+    const [formData, setFormData] = (0, import_react.useState)({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: ""
+    });
+    const [error, setError] = (0, import_react.useState)("");
+    const [success, setSuccess] = (0, import_react.useState)("");
+    const [loading, setLoading] = (0, import_react.useState)(false);
+    const handleInputChange = (e) => {
+      const { name, value } = e.target;
+      setFormData((prev) => ({ ...prev, [name]: value }));
+      setError("");
+    };
+    const validateForm = () => {
+      if (!formData.currentPassword) {
+        setError("\u8BF7\u8F93\u5165\u5F53\u524D\u5BC6\u7801");
+        return false;
+      }
+      if (!formData.newPassword) {
+        setError("\u8BF7\u8F93\u5165\u65B0\u5BC6\u7801");
+        return false;
+      }
+      if (formData.newPassword.length < 6) {
+        setError("\u65B0\u5BC6\u7801\u957F\u5EA6\u81F3\u5C116\u4F4D");
+        return false;
+      }
+      if (formData.newPassword !== formData.confirmPassword) {
+        setError("\u4E24\u6B21\u8F93\u5165\u7684\u65B0\u5BC6\u7801\u4E0D\u4E00\u81F4");
+        return false;
+      }
+      return true;
+    };
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      if (!validateForm())
+        return;
+      setLoading(true);
+      setError("");
+      try {
+        const response = await fetch("/api/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Session-ID": sessionId
+          },
+          body: JSON.stringify({
+            currentPassword: formData.currentPassword,
+            newPassword: formData.newPassword
+          })
+        });
+        const result = await response.json();
+        if (result.success) {
+          setSuccess("\u5BC6\u7801\u4FEE\u6539\u6210\u529F\uFF013\u79D2\u540E\u5C06\u8DF3\u8F6C\u5230\u767B\u5F55\u9875\u9762...");
+          setTimeout(() => {
+            window.location.href = "/login.html";
+          }, 3e3);
+        } else {
+          setError(result.message || "\u5BC6\u7801\u4FEE\u6539\u5931\u8D25");
+        }
+      } catch (error2) {
+        setError("\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5");
+      } finally {
+        setLoading(false);
+      }
+    };
+    const handleClose = () => {
+      setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setError("");
+      setSuccess("");
+      onClose();
+    };
+    if (!isOpen)
+      return null;
+    return /* @__PURE__ */ import_react.default.createElement("div", { className: "modal-overlay", onClick: handleClose }, /* @__PURE__ */ import_react.default.createElement("div", { className: "modal-content password-modal", onClick: (e) => e.stopPropagation() }, /* @__PURE__ */ import_react.default.createElement("div", { className: "modal-header" }, /* @__PURE__ */ import_react.default.createElement("h3", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-key" }), " \u4FEE\u6539\u5BC6\u7801"), /* @__PURE__ */ import_react.default.createElement("button", { className: "close-btn", onClick: handleClose }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-x" }))), /* @__PURE__ */ import_react.default.createElement("form", { onSubmit: handleSubmit, className: "password-form" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { htmlFor: "currentPassword" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-lock" }), " \u5F53\u524D\u5BC6\u7801"), /* @__PURE__ */ import_react.default.createElement(
+      "input",
+      {
+        type: "password",
+        id: "currentPassword",
+        name: "currentPassword",
+        value: formData.currentPassword,
+        onChange: handleInputChange,
+        placeholder: "\u8BF7\u8F93\u5165\u5F53\u524D\u5BC6\u7801",
+        required: true
+      }
+    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { htmlFor: "newPassword" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-key" }), " \u65B0\u5BC6\u7801"), /* @__PURE__ */ import_react.default.createElement(
+      "input",
+      {
+        type: "password",
+        id: "newPassword",
+        name: "newPassword",
+        value: formData.newPassword,
+        onChange: handleInputChange,
+        placeholder: "\u8BF7\u8F93\u5165\u65B0\u5BC6\u7801\uFF08\u81F3\u5C116\u4F4D\uFF09",
+        minLength: "6",
+        required: true
+      }
+    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { htmlFor: "confirmPassword" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-check-circle" }), " \u786E\u8BA4\u65B0\u5BC6\u7801"), /* @__PURE__ */ import_react.default.createElement(
+      "input",
+      {
+        type: "password",
+        id: "confirmPassword",
+        name: "confirmPassword",
+        value: formData.confirmPassword,
+        onChange: handleInputChange,
+        placeholder: "\u8BF7\u518D\u6B21\u8F93\u5165\u65B0\u5BC6\u7801",
+        required: true
+      }
+    )), error && /* @__PURE__ */ import_react.default.createElement("div", { className: "alert alert-error" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-exclamation-triangle" }), error), success && /* @__PURE__ */ import_react.default.createElement("div", { className: "alert alert-success" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-check-circle" }), success), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-actions" }, /* @__PURE__ */ import_react.default.createElement("button", { type: "button", onClick: handleClose, className: "btn btn-secondary" }, "\u53D6\u6D88"), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", disabled: loading, className: "btn btn-primary" }, loading ? /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-arrow-repeat spin" }), "\u4FEE\u6539\u4E2D...") : /* @__PURE__ */ import_react.default.createElement(import_react.default.Fragment, null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-check" }), "\u786E\u8BA4\u4FEE\u6539"))))));
+  }
+  function AdminApp() {
     const [files, setFiles] = (0, import_react.useState)([]);
     const [loading, setLoading] = (0, import_react.useState)(true);
     const [showAddForm, setShowAddForm] = (0, import_react.useState)(false);
@@ -23610,6 +23729,8 @@
     const [stats, setStats] = (0, import_react.useState)({ total: 0, categories: {} });
     const [activeSection, setActiveSection] = (0, import_react.useState)("dashboard");
     const [sidebarOpen, setSidebarOpen] = (0, import_react.useState)(false);
+    const [showPasswordModal, setShowPasswordModal] = (0, import_react.useState)(false);
+    const [sessionId, setSessionId] = (0, import_react.useState)(null);
     const [formData, setFormData] = (0, import_react.useState)({
       name: "",
       description: "",
@@ -23623,26 +23744,29 @@
       fetchFiles();
     }, []);
     const checkAuth = async () => {
+      const storedSessionId = localStorage.getItem("sessionId");
+      if (!storedSessionId) {
+        window.location.href = "/login.html";
+        return;
+      }
       try {
-        const sessionId = localStorage.getItem("sessionId");
-        if (!sessionId) {
-          window.location.href = "/login.html";
-          return;
-        }
         const response = await fetch("/api/auth/status", {
-          headers: {
-            "X-Session-ID": sessionId
-          }
+          headers: { "X-Session-ID": storedSessionId }
         });
-        const data = await response.json();
-        if (!response.ok || !data.authenticated) {
+        if (response.ok) {
+          const result = await response.json();
+          if (result.authenticated) {
+            setSessionId(storedSessionId);
+          } else {
+            localStorage.removeItem("sessionId");
+            window.location.href = "/login.html";
+          }
+        } else {
           localStorage.removeItem("sessionId");
           window.location.href = "/login.html";
-          return;
         }
       } catch (error) {
         console.error("Auth check failed:", error);
-        localStorage.removeItem("sessionId");
         window.location.href = "/login.html";
       }
     };
@@ -23651,266 +23775,200 @@
         const response = await fetch("/api/files");
         const data = await response.json();
         setFiles(data);
-        const categories = {};
+        const stats2 = {
+          total: data.length,
+          categories: {}
+        };
         data.forEach((file) => {
-          categories[file.category] = (categories[file.category] || 0) + 1;
+          const category = file.category || "uncategorized";
+          stats2.categories[category] = (stats2.categories[category] || 0) + 1;
         });
-        setStats({ total: data.length, categories });
+        setStats(stats2);
       } catch (error) {
-        console.error("\u83B7\u53D6\u6587\u4EF6\u5217\u8868\u5931\u8D25:", error);
+        console.error("Failed to fetch files:", error);
       } finally {
         setLoading(false);
       }
     };
-    const handleSubmit = async (e) => {
+    const handleLogout = async () => {
+      try {
+        await fetch("/api/logout", {
+          method: "POST",
+          headers: { "X-Session-ID": sessionId }
+        });
+      } catch (error) {
+        console.error("Logout error:", error);
+      } finally {
+        localStorage.removeItem("sessionId");
+        window.location.href = "/login.html";
+      }
+    };
+    const handleAddFile = async (e) => {
       e.preventDefault();
       try {
-        const url = editingFile ? `/api/files/${editingFile.id}` : "/api/files";
-        const method = editingFile ? "PUT" : "POST";
-        const sessionId = localStorage.getItem("sessionId");
-        const response = await fetch(url, {
-          method,
+        const response = await fetch("/api/files", {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-Session-ID": sessionId
           },
-          body: JSON.stringify(formData)
+          body: JSON.stringify({
+            ...formData,
+            size: parseInt(formData.size) || 0
+          })
+        });
+        if (response.ok) {
+          setFormData({
+            name: "",
+            description: "",
+            url: "",
+            category: "",
+            size: "",
+            version: ""
+          });
+          setShowAddForm(false);
+          fetchFiles();
+        }
+      } catch (error) {
+        console.error("Failed to add file:", error);
+      }
+    };
+    const handleDeleteFile = async (id) => {
+      if (!confirm("\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u4E2A\u6587\u4EF6\u5417\uFF1F"))
+        return;
+      try {
+        const response = await fetch(`/api/files/${id}`, {
+          method: "DELETE",
+          headers: { "X-Session-ID": sessionId }
         });
         if (response.ok) {
           fetchFiles();
-          resetForm();
-          showNotification(editingFile ? "\u8D44\u6E90\u66F4\u65B0\u6210\u529F\uFF01" : "\u8D44\u6E90\u6DFB\u52A0\u6210\u529F\uFF01", "success");
-        } else {
-          showNotification("\u64CD\u4F5C\u5931\u8D25\uFF01", "error");
         }
       } catch (error) {
-        console.error("\u63D0\u4EA4\u5931\u8D25:", error);
-        showNotification("\u64CD\u4F5C\u5931\u8D25\uFF01", "error");
+        console.error("Failed to delete file:", error);
       }
     };
-    const handleEdit = (file) => {
-      setEditingFile(file);
-      setFormData({
-        name: file.name,
-        description: file.description,
-        url: file.url,
-        category: file.category,
-        size: file.size,
-        version: file.version
-      });
-      setShowAddForm(true);
-      setActiveSection("add");
-    };
-    const handleDelete = async (id) => {
-      if (confirm("\u786E\u5B9A\u8981\u5220\u9664\u8FD9\u4E2A\u8D44\u6E90\u5417\uFF1F")) {
-        try {
-          const sessionId = localStorage.getItem("sessionId");
-          const response = await fetch(`/api/files/${id}`, {
-            method: "DELETE",
-            headers: {
-              "X-Session-ID": sessionId
-            }
-          });
-          if (response.ok) {
-            fetchFiles();
-            showNotification("\u8D44\u6E90\u5220\u9664\u6210\u529F\uFF01", "success");
-          } else {
-            showNotification("\u5220\u9664\u5931\u8D25\uFF01", "error");
-          }
-        } catch (error) {
-          console.error("\u5220\u9664\u5931\u8D25:", error);
-          showNotification("\u5220\u9664\u5931\u8D25\uFF01", "error");
-        }
-      }
-    };
-    const resetForm = () => {
-      setFormData({
-        name: "",
-        description: "",
-        url: "",
-        category: "",
-        size: "",
-        version: ""
-      });
-      setShowAddForm(false);
-      setEditingFile(null);
-    };
-    const handleLogout = async () => {
-      try {
-        const sessionId = localStorage.getItem("sessionId");
-        await fetch("/api/logout", {
-          method: "POST",
-          headers: {
-            "X-Session-ID": sessionId
-          }
-        });
-        localStorage.removeItem("sessionId");
-        window.location.href = "/login.html";
-      } catch (error) {
-        console.error("\u767B\u51FA\u5931\u8D25:", error);
-      }
-    };
-    const showNotification = (message, type) => {
-      const notification = document.createElement("div");
-      notification.className = `alert alert-${type === "success" ? "success" : "danger"} position-fixed`;
-      notification.style.cssText = "top: 20px; right: 20px; z-index: 9999; min-width: 300px; padding: 1rem; border-radius: 12px; background: var(--bg-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-color); color: var(--text-primary);";
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      setTimeout(() => {
-        notification.remove();
-      }, 3e3);
-    };
-    const renderDashboard = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "fade-in" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-header" }, /* @__PURE__ */ import_react.default.createElement("h2", { className: "card-title" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-speedometer2" }), "\u4EEA\u8868\u677F\u6982\u89C8")), /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body" }, /* @__PURE__ */ import_react.default.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1.5rem" } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card", style: { margin: 0 } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body", style: { textAlign: "center", padding: "1.5rem" } }, /* @__PURE__ */ import_react.default.createElement("div", { style: { fontSize: "2rem", fontWeight: "700", background: "var(--primary-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "0.5rem" } }, stats.total), /* @__PURE__ */ import_react.default.createElement("div", { style: { color: "var(--text-muted)", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" } }, "\u603B\u8D44\u6E90\u6570"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card", style: { margin: 0 } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body", style: { textAlign: "center", padding: "1.5rem" } }, /* @__PURE__ */ import_react.default.createElement("div", { style: { fontSize: "2rem", fontWeight: "700", background: "var(--success-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "0.5rem" } }, Object.keys(stats.categories).length), /* @__PURE__ */ import_react.default.createElement("div", { style: { color: "var(--text-muted)", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" } }, "\u5206\u7C7B\u6570\u91CF"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card", style: { margin: 0 } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body", style: { textAlign: "center", padding: "1.5rem" } }, /* @__PURE__ */ import_react.default.createElement("div", { style: { fontSize: "2rem", fontWeight: "700", background: "var(--warning-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "0.5rem" } }, stats.categories["\u8F6F\u4EF6"] || 0), /* @__PURE__ */ import_react.default.createElement("div", { style: { color: "var(--text-muted)", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" } }, "\u8F6F\u4EF6\u8D44\u6E90"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card", style: { margin: 0 } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body", style: { textAlign: "center", padding: "1.5rem" } }, /* @__PURE__ */ import_react.default.createElement("div", { style: { fontSize: "2rem", fontWeight: "700", background: "var(--danger-gradient)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text", marginBottom: "0.5rem" } }, stats.categories["\u6E38\u620F"] || 0), /* @__PURE__ */ import_react.default.createElement("div", { style: { color: "var(--text-muted)", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.5px" } }, "\u6E38\u620F\u8D44\u6E90")))))));
-    const renderAddForm = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "fade-in" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-header" }, /* @__PURE__ */ import_react.default.createElement("h2", { className: "card-title" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-file-earmark-plus" }), editingFile ? "\u7F16\u8F91\u8D44\u6E90" : "\u6DFB\u52A0\u65B0\u8D44\u6E90")), /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body" }, /* @__PURE__ */ import_react.default.createElement("form", { onSubmit: handleSubmit }, /* @__PURE__ */ import_react.default.createElement("div", { className: "form-grid" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u8D44\u6E90\u540D\u79F0"), /* @__PURE__ */ import_react.default.createElement(
+    const renderDashboard = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "dashboard" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "dashboard-header" }, /* @__PURE__ */ import_react.default.createElement("h2", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-speedometer2" }), " \u4EEA\u8868\u677F"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u7CFB\u7EDF\u6982\u89C8\u548C\u7EDF\u8BA1\u4FE1\u606F")), /* @__PURE__ */ import_react.default.createElement("div", { className: "stats-grid" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-files" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, stats.total), /* @__PURE__ */ import_react.default.createElement("p", null, "\u603B\u6587\u4EF6\u6570"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-tags" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, Object.keys(stats.categories).length), /* @__PURE__ */ import_react.default.createElement("p", null, "\u5206\u7C7B\u6570\u91CF"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-download" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, files.reduce((sum, file) => sum + (file.downloads || 0), 0)), /* @__PURE__ */ import_react.default.createElement("p", null, "\u603B\u4E0B\u8F7D\u6B21\u6570")))), /* @__PURE__ */ import_react.default.createElement("div", { className: "categories-overview" }, /* @__PURE__ */ import_react.default.createElement("h3", null, "\u5206\u7C7B\u7EDF\u8BA1"), /* @__PURE__ */ import_react.default.createElement("div", { className: "category-list" }, Object.entries(stats.categories).map(([category, count]) => /* @__PURE__ */ import_react.default.createElement("div", { key: category, className: "category-item" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "category-name" }, category), /* @__PURE__ */ import_react.default.createElement("span", { className: "category-count" }, count, " \u4E2A\u6587\u4EF6"))))));
+    const renderFileManagement = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "file-management" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "section-header" }, /* @__PURE__ */ import_react.default.createElement("h2", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-folder" }), " \u6587\u4EF6\u7BA1\u7406"), /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        className: "btn btn-primary",
+        onClick: () => setShowAddForm(true)
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-plus" }),
+      " \u6DFB\u52A0\u6587\u4EF6"
+    )), showAddForm && /* @__PURE__ */ import_react.default.createElement("div", { className: "add-form-container" }, /* @__PURE__ */ import_react.default.createElement("form", { onSubmit: handleAddFile, className: "add-form" }, /* @__PURE__ */ import_react.default.createElement("h3", null, "\u6DFB\u52A0\u65B0\u6587\u4EF6"), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-grid" }, /* @__PURE__ */ import_react.default.createElement(
       "input",
       {
         type: "text",
-        className: "form-control",
-        placeholder: "\u8F93\u5165\u8D44\u6E90\u540D\u79F0",
+        placeholder: "\u6587\u4EF6\u540D\u79F0",
         value: formData.name,
         onChange: (e) => setFormData({ ...formData, name: e.target.value }),
         required: true
       }
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u8D44\u6E90\u5206\u7C7B"), /* @__PURE__ */ import_react.default.createElement(
-      "select",
+    ), /* @__PURE__ */ import_react.default.createElement(
+      "input",
       {
-        className: "form-control",
+        type: "text",
+        placeholder: "\u5206\u7C7B",
         value: formData.category,
-        onChange: (e) => setFormData({ ...formData, category: e.target.value }),
-        required: true
-      },
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "" }, "\u9009\u62E9\u5206\u7C7B"),
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "\u8F6F\u4EF6" }, "\u{1F4BB} \u8F6F\u4EF6\u5DE5\u5177"),
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "\u6E38\u620F" }, "\u{1F3AE} \u6E38\u620F\u5A31\u4E50"),
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "\u6587\u6863" }, "\u{1F4C4} \u6587\u6863\u8D44\u6599"),
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "\u5A92\u4F53" }, "\u{1F3B5} \u5A92\u4F53\u6587\u4EF6"),
-      /* @__PURE__ */ import_react.default.createElement("option", { value: "\u5176\u4ED6" }, "\u{1F4E6} \u5176\u4ED6\u8D44\u6E90")
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u6587\u4EF6\u5927\u5C0F"), /* @__PURE__ */ import_react.default.createElement(
-      "input",
-      {
-        type: "text",
-        className: "form-control",
-        placeholder: "\u4F8B\u5982: 128MB",
-        value: formData.size,
-        onChange: (e) => setFormData({ ...formData, size: e.target.value }),
-        required: true
+        onChange: (e) => setFormData({ ...formData, category: e.target.value })
       }
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u7248\u672C\u4FE1\u606F"), /* @__PURE__ */ import_react.default.createElement(
-      "input",
-      {
-        type: "text",
-        className: "form-control",
-        placeholder: "\u4F8B\u5982: v2.1.0",
-        value: formData.version,
-        onChange: (e) => setFormData({ ...formData, version: e.target.value }),
-        required: true
-      }
-    ))), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u4E0B\u8F7D\u94FE\u63A5"), /* @__PURE__ */ import_react.default.createElement(
+    ), /* @__PURE__ */ import_react.default.createElement(
       "input",
       {
         type: "url",
-        className: "form-control",
-        placeholder: "https://example.com/download",
+        placeholder: "\u4E0B\u8F7D\u94FE\u63A5",
         value: formData.url,
         onChange: (e) => setFormData({ ...formData, url: e.target.value }),
         required: true
       }
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-group" }, /* @__PURE__ */ import_react.default.createElement("label", { className: "form-label" }, "\u8D44\u6E90\u63CF\u8FF0"), /* @__PURE__ */ import_react.default.createElement(
+    ), /* @__PURE__ */ import_react.default.createElement(
+      "input",
+      {
+        type: "number",
+        placeholder: "\u6587\u4EF6\u5927\u5C0F (\u5B57\u8282)",
+        value: formData.size,
+        onChange: (e) => setFormData({ ...formData, size: e.target.value })
+      }
+    )), /* @__PURE__ */ import_react.default.createElement(
       "textarea",
       {
-        className: "form-control",
-        rows: "4",
-        placeholder: "\u8BE6\u7EC6\u63CF\u8FF0\u8FD9\u4E2A\u8D44\u6E90\u7684\u529F\u80FD\u548C\u7279\u70B9...",
+        placeholder: "\u6587\u4EF6\u63CF\u8FF0",
         value: formData.description,
         onChange: (e) => setFormData({ ...formData, description: e.target.value }),
-        required: true
+        rows: "3"
       }
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "btn-group" }, /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "btn btn-success btn-lg" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-check-circle" }), editingFile ? "\u66F4\u65B0\u8D44\u6E90" : "\u6DFB\u52A0\u8D44\u6E90"), /* @__PURE__ */ import_react.default.createElement("button", { type: "button", className: "btn btn-secondary btn-lg", onClick: resetForm }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-x-circle" }), "\u53D6\u6D88\u64CD\u4F5C"))))));
-    const renderFilesList = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "fade-in" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "content-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "card-header" }, /* @__PURE__ */ import_react.default.createElement("h2", { className: "card-title" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-collection" }), "\u8D44\u6E90\u7BA1\u7406\u4E2D\u5FC3", /* @__PURE__ */ import_react.default.createElement("span", { className: "badge badge-primary", style: { marginLeft: "1rem" } }, files.length, " \u4E2A\u8D44\u6E90"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "card-body", style: { padding: 0 } }, files.length === 0 ? /* @__PURE__ */ import_react.default.createElement("div", { className: "empty-state" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-inbox" }), /* @__PURE__ */ import_react.default.createElement("h3", null, "\u6682\u65E0\u8D44\u6E90"), /* @__PURE__ */ import_react.default.createElement("p", null, '\u70B9\u51FB\u4FA7\u8FB9\u680F"\u6DFB\u52A0\u8D44\u6E90"\u5F00\u59CB\u7BA1\u7406\u60A8\u7684\u8D44\u6E90\u5E93')) : /* @__PURE__ */ import_react.default.createElement("div", { className: "table-container" }, /* @__PURE__ */ import_react.default.createElement("table", { className: "table" }, /* @__PURE__ */ import_react.default.createElement("thead", null, /* @__PURE__ */ import_react.default.createElement("tr", null, /* @__PURE__ */ import_react.default.createElement("th", null, "\u8D44\u6E90\u4FE1\u606F"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u5206\u7C7B"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u89C4\u683C"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u63CF\u8FF0"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u64CD\u4F5C"))), /* @__PURE__ */ import_react.default.createElement("tbody", null, files.map((file, index) => /* @__PURE__ */ import_react.default.createElement("tr", { key: file.id, className: "fade-in", style: { animationDelay: `${index * 0.05}s` } }, /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", null, /* @__PURE__ */ import_react.default.createElement("strong", { style: { display: "block" } }, file.name), /* @__PURE__ */ import_react.default.createElement("small", { style: { color: "var(--text-muted)" } }, "\u7248\u672C ", file.version))), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("span", { className: "badge badge-primary" }, file.category)), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", { className: "badge badge-secondary" }, file.size)), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", { style: { maxWidth: "200px" } }, /* @__PURE__ */ import_react.default.createElement("small", { style: { color: "var(--text-muted)" } }, file.description.length > 60 ? file.description.substring(0, 60) + "..." : file.description))), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", { className: "btn-group" }, /* @__PURE__ */ import_react.default.createElement(
+    ), /* @__PURE__ */ import_react.default.createElement("div", { className: "form-actions" }, /* @__PURE__ */ import_react.default.createElement("button", { type: "button", onClick: () => setShowAddForm(false), className: "btn btn-secondary" }, "\u53D6\u6D88"), /* @__PURE__ */ import_react.default.createElement("button", { type: "submit", className: "btn btn-primary" }, "\u6DFB\u52A0\u6587\u4EF6")))), /* @__PURE__ */ import_react.default.createElement("div", { className: "files-table" }, /* @__PURE__ */ import_react.default.createElement("table", null, /* @__PURE__ */ import_react.default.createElement("thead", null, /* @__PURE__ */ import_react.default.createElement("tr", null, /* @__PURE__ */ import_react.default.createElement("th", null, "\u540D\u79F0"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u5206\u7C7B"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u5927\u5C0F"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u4E0B\u8F7D\u6B21\u6570"), /* @__PURE__ */ import_react.default.createElement("th", null, "\u64CD\u4F5C"))), /* @__PURE__ */ import_react.default.createElement("tbody", null, files.map((file) => /* @__PURE__ */ import_react.default.createElement("tr", { key: file.id }, /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", { className: "file-info" }, /* @__PURE__ */ import_react.default.createElement("strong", null, file.name), file.description && /* @__PURE__ */ import_react.default.createElement("p", null, file.description))), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("span", { className: "category-tag" }, file.category || "uncategorized")), /* @__PURE__ */ import_react.default.createElement("td", null, file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "-"), /* @__PURE__ */ import_react.default.createElement("td", null, file.downloads || 0), /* @__PURE__ */ import_react.default.createElement("td", null, /* @__PURE__ */ import_react.default.createElement("div", { className: "action-buttons" }, /* @__PURE__ */ import_react.default.createElement(
       "button",
       {
-        className: "btn btn-primary btn-sm",
-        onClick: () => handleEdit(file),
-        title: "\u7F16\u8F91\u8D44\u6E90"
+        className: "btn btn-sm btn-danger",
+        onClick: () => handleDeleteFile(file.id)
       },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-pencil-square" })
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-trash" })
+    )))))))));
+    const renderSettings = () => /* @__PURE__ */ import_react.default.createElement("div", { className: "settings" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "section-header" }, /* @__PURE__ */ import_react.default.createElement("h2", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-gear" }), " \u7CFB\u7EDF\u8BBE\u7F6E")), /* @__PURE__ */ import_react.default.createElement("div", { className: "settings-grid" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-key" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, "\u5BC6\u7801\u7BA1\u7406"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u4FEE\u6539\u7BA1\u7406\u5458\u767B\u5F55\u5BC6\u7801"), /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        className: "btn btn-primary",
+        onClick: () => setShowPasswordModal(true)
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-key" }),
+      " \u4FEE\u6539\u5BC6\u7801"
+    ))), /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-palette" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, "\u4E3B\u9898\u8BBE\u7F6E"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u5207\u6362\u754C\u9762\u4E3B\u9898\u6A21\u5F0F"), /* @__PURE__ */ import_react.default.createElement(ThemeToggle, null))), /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-database" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "setting-content" }, /* @__PURE__ */ import_react.default.createElement("h3", null, "\u6570\u636E\u7BA1\u7406"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u6570\u636E\u5E93\u7EF4\u62A4\u548C\u5907\u4EFD"), /* @__PURE__ */ import_react.default.createElement("button", { className: "btn btn-secondary", disabled: true }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-download" }), " \u5BFC\u51FA\u6570\u636E")))));
+    if (loading) {
+      return /* @__PURE__ */ import_react.default.createElement("div", { className: "loading-container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "loading-spinner" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-arrow-repeat spin" })), /* @__PURE__ */ import_react.default.createElement("p", null, "\u52A0\u8F7D\u4E2D..."));
+    }
+    return /* @__PURE__ */ import_react.default.createElement("div", { className: "admin-container" }, /* @__PURE__ */ import_react.default.createElement("aside", { className: `sidebar ${sidebarOpen ? "open" : ""}` }, /* @__PURE__ */ import_react.default.createElement("div", { className: "sidebar-header" }, /* @__PURE__ */ import_react.default.createElement("h2", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-speedometer2" }), " Noah Box"), /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        className: "sidebar-toggle",
+        onClick: () => setSidebarOpen(!sidebarOpen)
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-list" })
+    )), /* @__PURE__ */ import_react.default.createElement("nav", { className: "sidebar-nav" }, /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        className: `nav-item ${activeSection === "dashboard" ? "active" : ""}`,
+        onClick: () => setActiveSection("dashboard")
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-speedometer2" }),
+      /* @__PURE__ */ import_react.default.createElement("span", null, "\u4EEA\u8868\u677F")
     ), /* @__PURE__ */ import_react.default.createElement(
       "button",
       {
-        className: "btn btn-danger btn-sm",
-        onClick: () => handleDelete(file.id),
-        title: "\u5220\u9664\u8D44\u6E90"
+        className: `nav-item ${activeSection === "files" ? "active" : ""}`,
+        onClick: () => setActiveSection("files")
       },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-trash3" })
-    )))))))))));
-    if (loading) {
-      return /* @__PURE__ */ import_react.default.createElement("div", { className: "admin-layout" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "loading-container", style: { width: "100%", minHeight: "100vh" } }, /* @__PURE__ */ import_react.default.createElement("div", { className: "spinner" }), /* @__PURE__ */ import_react.default.createElement("div", { className: "loading-text" }, "\u6B63\u5728\u52A0\u8F7D\u7BA1\u7406\u9762\u677F...")));
-    }
-    return /* @__PURE__ */ import_react.default.createElement("div", { className: "admin-layout" }, /* @__PURE__ */ import_react.default.createElement(
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-folder" }),
+      /* @__PURE__ */ import_react.default.createElement("span", null, "\u6587\u4EF6\u7BA1\u7406")
+    ), /* @__PURE__ */ import_react.default.createElement(
+      "button",
+      {
+        className: `nav-item ${activeSection === "settings" ? "active" : ""}`,
+        onClick: () => setActiveSection("settings")
+      },
+      /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-gear" }),
+      /* @__PURE__ */ import_react.default.createElement("span", null, "\u7CFB\u7EDF\u8BBE\u7F6E")
+    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "sidebar-footer" }, /* @__PURE__ */ import_react.default.createElement("button", { className: "logout-btn", onClick: handleLogout }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-box-arrow-right" }), /* @__PURE__ */ import_react.default.createElement("span", null, "\u9000\u51FA\u767B\u5F55")))), /* @__PURE__ */ import_react.default.createElement("main", { className: "main-content" }, /* @__PURE__ */ import_react.default.createElement("header", { className: "main-header" }, /* @__PURE__ */ import_react.default.createElement(
       "button",
       {
         className: "mobile-menu-btn",
         onClick: () => setSidebarOpen(!sidebarOpen)
       },
       /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-list" })
-    ), /* @__PURE__ */ import_react.default.createElement("div", { className: `sidebar ${sidebarOpen ? "open" : ""}` }, /* @__PURE__ */ import_react.default.createElement("div", { className: "sidebar-header" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "sidebar-brand" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "brand-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-cloud-download" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "brand-text" }, /* @__PURE__ */ import_react.default.createElement("h1", null, "\u8D44\u6E90\u7BA1\u7406"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u9AD8\u7EA7\u63A7\u5236\u9762\u677F")))), /* @__PURE__ */ import_react.default.createElement("nav", { className: "sidebar-nav" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-section" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-section-title" }, "\u4E3B\u8981\u529F\u80FD"), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement(
-      "a",
+    ), /* @__PURE__ */ import_react.default.createElement("div", { className: "header-actions" }, /* @__PURE__ */ import_react.default.createElement(ThemeToggle, null), /* @__PURE__ */ import_react.default.createElement("button", { className: "btn btn-outline", onClick: handleLogout }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-box-arrow-right" }), "\u9000\u51FA"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "content-area" }, activeSection === "dashboard" && renderDashboard(), activeSection === "files" && renderFileManagement(), activeSection === "settings" && renderSettings())), /* @__PURE__ */ import_react.default.createElement(
+      PasswordModal,
       {
-        href: "#",
-        className: `nav-link ${activeSection === "dashboard" ? "active" : ""}`,
-        onClick: (e) => {
-          e.preventDefault();
-          setActiveSection("dashboard");
-          setSidebarOpen(false);
-        }
-      },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-speedometer2" }),
-      "\u4EEA\u8868\u677F"
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement(
-      "a",
-      {
-        href: "#",
-        className: `nav-link ${activeSection === "files" ? "active" : ""}`,
-        onClick: (e) => {
-          e.preventDefault();
-          setActiveSection("files");
-          setSidebarOpen(false);
-        }
-      },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-collection" }),
-      "\u8D44\u6E90\u7BA1\u7406"
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement(
-      "a",
-      {
-        href: "#",
-        className: `nav-link ${activeSection === "add" ? "active" : ""}`,
-        onClick: (e) => {
-          e.preventDefault();
-          setActiveSection("add");
-          setShowAddForm(true);
-          resetForm();
-          setSidebarOpen(false);
-        }
-      },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-plus-circle" }),
-      "\u6DFB\u52A0\u8D44\u6E90"
-    ))), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-section" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-section-title" }, "\u7CFB\u7EDF\u8BBE\u7F6E"), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-link", style: { padding: "8px 16px" } }, /* @__PURE__ */ import_react.default.createElement(ThemeToggle, null))), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement("a", { href: "/change-password.html", className: "nav-link" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-shield-lock" }), "\u5B89\u5168\u8BBE\u7F6E")), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement("a", { href: "/", className: "nav-link" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-house" }), "\u8FD4\u56DE\u9996\u9875")), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-item" }, /* @__PURE__ */ import_react.default.createElement(
-      "a",
-      {
-        href: "#",
-        className: "nav-link",
-        onClick: (e) => {
-          e.preventDefault();
-          handleLogout();
-        }
-      },
-      /* @__PURE__ */ import_react.default.createElement("i", { className: "nav-icon bi bi-power" }),
-      "\u5B89\u5168\u9000\u51FA"
-    )))), /* @__PURE__ */ import_react.default.createElement("div", { className: "sidebar-stats" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stats-grid" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-item" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-number" }, stats.total), /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-label" }, "\u603B\u8D44\u6E90")), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-item" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-number" }, Object.keys(stats.categories).length), /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-label" }, "\u5206\u7C7B")), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-item" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-number" }, stats.categories["\u8F6F\u4EF6"] || 0), /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-label" }, "\u8F6F\u4EF6")), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-item" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-number" }, stats.categories["\u6E38\u620F"] || 0), /* @__PURE__ */ import_react.default.createElement("span", { className: "stat-label" }, "\u6E38\u620F"))))), /* @__PURE__ */ import_react.default.createElement("div", { className: "main-content" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "top-bar" }, /* @__PURE__ */ import_react.default.createElement("div", null, /* @__PURE__ */ import_react.default.createElement("h1", { className: "page-title" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-gear-wide-connected" }), activeSection === "dashboard" && "\u4EEA\u8868\u677F", activeSection === "files" && "\u8D44\u6E90\u7BA1\u7406", activeSection === "add" && (editingFile ? "\u7F16\u8F91\u8D44\u6E90" : "\u6DFB\u52A0\u8D44\u6E90")), /* @__PURE__ */ import_react.default.createElement("p", { className: "page-subtitle" }, activeSection === "dashboard" && "\u7CFB\u7EDF\u6982\u89C8\u4E0E\u7EDF\u8BA1\u4FE1\u606F", activeSection === "files" && "\u7BA1\u7406\u60A8\u7684\u6240\u6709\u8D44\u6E90\u6587\u4EF6", activeSection === "add" && "\u6DFB\u52A0\u6216\u7F16\u8F91\u8D44\u6E90\u4FE1\u606F")), /* @__PURE__ */ import_react.default.createElement("div", { className: "top-actions" }, /* @__PURE__ */ import_react.default.createElement("span", { style: { color: "var(--text-muted)", fontSize: "0.9rem" } }, "\u6B22\u8FCE\u56DE\u6765\uFF0C\u7BA1\u7406\u5458"))), activeSection === "dashboard" && renderDashboard(), activeSection === "files" && renderFilesList(), activeSection === "add" && renderAddForm()));
+        isOpen: showPasswordModal,
+        onClose: () => setShowPasswordModal(false),
+        sessionId
+      }
+    ));
   }
   var container = document.getElementById("root");
   var root = (0, import_client.createRoot)(container);
-  root.render(/* @__PURE__ */ import_react.default.createElement(AdminPanel, null));
+  root.render(/* @__PURE__ */ import_react.default.createElement(AdminApp, null));
 })();
 /*! Bundled license information:
 

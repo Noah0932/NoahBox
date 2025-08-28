@@ -49,14 +49,198 @@ function ThemeToggle() {
   };
 
   return (
-    <button className="theme-toggle-btn" onClick={toggleTheme} title={`当前: ${getThemeText()}模式`}>
-      <i className={`bi ${getThemeIcon()}`}></i>
-      <span className="theme-text">{getThemeText()}</span>
+    <button 
+      onClick={toggleTheme}
+      className="theme-toggle-btn"
+      title={`当前主题: ${getThemeText()}`}
+    >
+      <i className={getThemeIcon()}></i>
+      <span>{getThemeText()}</span>
     </button>
   );
 }
 
-function AdminPanel() {
+// 密码修改模态框组件
+function PasswordModal({ isOpen, onClose, sessionId }) {
+  const [formData, setFormData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setError('');
+  };
+
+  const validateForm = () => {
+    if (!formData.currentPassword) {
+      setError('请输入当前密码');
+      return false;
+    }
+    if (!formData.newPassword) {
+      setError('请输入新密码');
+      return false;
+    }
+    if (formData.newPassword.length < 6) {
+      setError('新密码长度至少6位');
+      return false;
+    }
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('两次输入的新密码不一致');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-ID': sessionId
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        })
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setSuccess('密码修改成功！3秒后将跳转到登录页面...');
+        setTimeout(() => {
+          window.location.href = '/login.html';
+        }, 3000);
+      } else {
+        setError(result.message || '密码修改失败');
+      }
+    } catch (error) {
+      setError('网络错误，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setError('');
+    setSuccess('');
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="modal-overlay" onClick={handleClose}>
+      <div className="modal-content password-modal" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h3><i className="bi bi-key"></i> 修改密码</h3>
+          <button className="close-btn" onClick={handleClose}>
+            <i className="bi bi-x"></i>
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit} className="password-form">
+          <div className="form-group">
+            <label htmlFor="currentPassword">
+              <i className="bi bi-lock"></i> 当前密码
+            </label>
+            <input
+              type="password"
+              id="currentPassword"
+              name="currentPassword"
+              value={formData.currentPassword}
+              onChange={handleInputChange}
+              placeholder="请输入当前密码"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="newPassword">
+              <i className="bi bi-key"></i> 新密码
+            </label>
+            <input
+              type="password"
+              id="newPassword"
+              name="newPassword"
+              value={formData.newPassword}
+              onChange={handleInputChange}
+              placeholder="请输入新密码（至少6位）"
+              minLength="6"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">
+              <i className="bi bi-check-circle"></i> 确认新密码
+            </label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              placeholder="请再次输入新密码"
+              required
+            />
+          </div>
+
+          {error && (
+            <div className="alert alert-error">
+              <i className="bi bi-exclamation-triangle"></i>
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="alert alert-success">
+              <i className="bi bi-check-circle"></i>
+              {success}
+            </div>
+          )}
+
+          <div className="form-actions">
+            <button type="button" onClick={handleClose} className="btn btn-secondary">
+              取消
+            </button>
+            <button type="submit" disabled={loading} className="btn btn-primary">
+              {loading ? (
+                <>
+                  <i className="bi bi-arrow-repeat spin"></i>
+                  修改中...
+                </>
+              ) : (
+                <>
+                  <i className="bi bi-check"></i>
+                  确认修改
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// 主管理应用组件
+function AdminApp() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -64,6 +248,8 @@ function AdminPanel() {
   const [stats, setStats] = useState({ total: 0, categories: {} });
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -79,28 +265,31 @@ function AdminPanel() {
   }, []);
 
   const checkAuth = async () => {
+    const storedSessionId = localStorage.getItem('sessionId');
+    if (!storedSessionId) {
+      window.location.href = '/login.html';
+      return;
+    }
+
     try {
-      const sessionId = localStorage.getItem('sessionId');
-      if (!sessionId) {
-        window.location.href = '/login.html';
-        return;
-      }
-      
       const response = await fetch('/api/auth/status', {
-        headers: {
-          'X-Session-ID': sessionId
-        }
+        headers: { 'X-Session-ID': storedSessionId }
       });
       
-      const data = await response.json();
-      if (!response.ok || !data.authenticated) {
+      if (response.ok) {
+        const result = await response.json();
+        if (result.authenticated) {
+          setSessionId(storedSessionId);
+        } else {
+          localStorage.removeItem('sessionId');
+          window.location.href = '/login.html';
+        }
+      } else {
         localStorage.removeItem('sessionId');
         window.location.href = '/login.html';
-        return;
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      localStorage.removeItem('sessionId');
       window.location.href = '/login.html';
     }
   };
@@ -111,361 +300,292 @@ function AdminPanel() {
       const data = await response.json();
       setFiles(data);
       
-      // 计算统计数据
-      const categories = {};
+      // 计算统计信息
+      const stats = {
+        total: data.length,
+        categories: {}
+      };
+      
       data.forEach(file => {
-        categories[file.category] = (categories[file.category] || 0) + 1;
+        const category = file.category || 'uncategorized';
+        stats.categories[category] = (stats.categories[category] || 0) + 1;
       });
-      setStats({ total: data.length, categories });
+      
+      setStats(stats);
     } catch (error) {
-      console.error('获取文件列表失败:', error);
+      console.error('Failed to fetch files:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleLogout = async () => {
     try {
-      const url = editingFile ? `/api/files/${editingFile.id}` : '/api/files';
-      const method = editingFile ? 'PUT' : 'POST';
-      const sessionId = localStorage.getItem('sessionId');
-      
-      const response = await fetch(url, {
-        method,
+      await fetch('/api/logout', {
+        method: 'POST',
+        headers: { 'X-Session-ID': sessionId }
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('sessionId');
+      window.location.href = '/login.html';
+    }
+  };
+
+  const handleAddFile = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const response = await fetch('/api/files', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'X-Session-ID': sessionId
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          size: parseInt(formData.size) || 0
+        })
+      });
+
+      if (response.ok) {
+        setFormData({
+          name: '',
+          description: '',
+          url: '',
+          category: '',
+          size: '',
+          version: ''
+        });
+        setShowAddForm(false);
+        fetchFiles();
+      }
+    } catch (error) {
+      console.error('Failed to add file:', error);
+    }
+  };
+
+  const handleDeleteFile = async (id) => {
+    if (!confirm('确定要删除这个文件吗？')) return;
+    
+    try {
+      const response = await fetch(`/api/files/${id}`, {
+        method: 'DELETE',
+        headers: { 'X-Session-ID': sessionId }
       });
 
       if (response.ok) {
         fetchFiles();
-        resetForm();
-        showNotification(editingFile ? '资源更新成功！' : '资源添加成功！', 'success');
-      } else {
-        showNotification('操作失败！', 'error');
       }
     } catch (error) {
-      console.error('提交失败:', error);
-      showNotification('操作失败！', 'error');
+      console.error('Failed to delete file:', error);
     }
-  };
-
-  const handleEdit = (file) => {
-    setEditingFile(file);
-    setFormData({
-      name: file.name,
-      description: file.description,
-      url: file.url,
-      category: file.category,
-      size: file.size,
-      version: file.version
-    });
-    setShowAddForm(true);
-    setActiveSection('add');
-  };
-
-  const handleDelete = async (id) => {
-    if (confirm('确定要删除这个资源吗？')) {
-      try {
-        const sessionId = localStorage.getItem('sessionId');
-        const response = await fetch(`/api/files/${id}`, {
-          method: 'DELETE',
-          headers: {
-            'X-Session-ID': sessionId
-          }
-        });
-
-        if (response.ok) {
-          fetchFiles();
-          showNotification('资源删除成功！', 'success');
-        } else {
-          showNotification('删除失败！', 'error');
-        }
-      } catch (error) {
-        console.error('删除失败:', error);
-        showNotification('删除失败！', 'error');
-      }
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      url: '',
-      category: '',
-      size: '',
-      version: ''
-    });
-    setShowAddForm(false);
-    setEditingFile(null);
-  };
-
-  const handleLogout = async () => {
-    try {
-      const sessionId = localStorage.getItem('sessionId');
-      await fetch('/api/logout', { 
-        method: 'POST',
-        headers: {
-          'X-Session-ID': sessionId
-        }
-      });
-      localStorage.removeItem('sessionId');
-      window.location.href = '/login.html';
-    } catch (error) {
-      console.error('登出失败:', error);
-    }
-  };
-
-  const showNotification = (message, type) => {
-    const notification = document.createElement('div');
-    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} position-fixed`;
-    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px; padding: 1rem; border-radius: 12px; background: var(--bg-glass); backdrop-filter: blur(20px); border: 1px solid var(--border-color); color: var(--text-primary);';
-    notification.textContent = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
   };
 
   const renderDashboard = () => (
-    <div className="fade-in">
-      <div className="content-card">
-        <div className="card-header">
-          <h2 className="card-title">
-            <i className="bi bi-speedometer2"></i>
-            仪表板概览
-          </h2>
-        </div>
-        <div className="card-body">
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem'}}>
-            <div className="content-card" style={{margin: 0}}>
-              <div className="card-body" style={{textAlign: 'center', padding: '1.5rem'}}>
-                <div style={{fontSize: '2rem', fontWeight: '700', background: 'var(--primary-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '0.5rem'}}>
-                  {stats.total}
-                </div>
-                <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-                  总资源数
-                </div>
-              </div>
-            </div>
-            <div className="content-card" style={{margin: 0}}>
-              <div className="card-body" style={{textAlign: 'center', padding: '1.5rem'}}>
-                <div style={{fontSize: '2rem', fontWeight: '700', background: 'var(--success-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '0.5rem'}}>
-                  {Object.keys(stats.categories).length}
-                </div>
-                <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-                  分类数量
-                </div>
-              </div>
-            </div>
-            <div className="content-card" style={{margin: 0}}>
-              <div className="card-body" style={{textAlign: 'center', padding: '1.5rem'}}>
-                <div style={{fontSize: '2rem', fontWeight: '700', background: 'var(--warning-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '0.5rem'}}>
-                  {stats.categories['软件'] || 0}
-                </div>
-                <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-                  软件资源
-                </div>
-              </div>
-            </div>
-            <div className="content-card" style={{margin: 0}}>
-              <div className="card-body" style={{textAlign: 'center', padding: '1.5rem'}}>
-                <div style={{fontSize: '2rem', fontWeight: '700', background: 'var(--danger-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text', marginBottom: '0.5rem'}}>
-                  {stats.categories['游戏'] || 0}
-                </div>
-                <div style={{color: 'var(--text-muted)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.5px'}}>
-                  游戏资源
-                </div>
-              </div>
-            </div>
+    <div className="dashboard">
+      <div className="dashboard-header">
+        <h2><i className="bi bi-speedometer2"></i> 仪表板</h2>
+        <p>系统概览和统计信息</p>
+      </div>
+      
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon">
+            <i className="bi bi-files"></i>
           </div>
+          <div className="stat-content">
+            <h3>{stats.total}</h3>
+            <p>总文件数</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">
+            <i className="bi bi-tags"></i>
+          </div>
+          <div className="stat-content">
+            <h3>{Object.keys(stats.categories).length}</h3>
+            <p>分类数量</p>
+          </div>
+        </div>
+        
+        <div className="stat-card">
+          <div className="stat-icon">
+            <i className="bi bi-download"></i>
+          </div>
+          <div className="stat-content">
+            <h3>{files.reduce((sum, file) => sum + (file.downloads || 0), 0)}</h3>
+            <p>总下载次数</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="categories-overview">
+        <h3>分类统计</h3>
+        <div className="category-list">
+          {Object.entries(stats.categories).map(([category, count]) => (
+            <div key={category} className="category-item">
+              <span className="category-name">{category}</span>
+              <span className="category-count">{count} 个文件</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
   );
 
-  const renderAddForm = () => (
-    <div className="fade-in">
-      <div className="content-card">
-        <div className="card-header">
-          <h2 className="card-title">
-            <i className="bi bi-file-earmark-plus"></i>
-            {editingFile ? '编辑资源' : '添加新资源'}
-          </h2>
-        </div>
-        <div className="card-body">
-          <form onSubmit={handleSubmit}>
+  const renderFileManagement = () => (
+    <div className="file-management">
+      <div className="section-header">
+        <h2><i className="bi bi-folder"></i> 文件管理</h2>
+        <button 
+          className="btn btn-primary"
+          onClick={() => setShowAddForm(true)}
+        >
+          <i className="bi bi-plus"></i> 添加文件
+        </button>
+      </div>
+
+      {showAddForm && (
+        <div className="add-form-container">
+          <form onSubmit={handleAddFile} className="add-form">
+            <h3>添加新文件</h3>
             <div className="form-grid">
-              <div className="form-group">
-                <label className="form-label">资源名称</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="输入资源名称"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">资源分类</label>
-                <select
-                  className="form-control"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  required
-                >
-                  <option value="">选择分类</option>
-                  <option value="软件">💻 软件工具</option>
-                  <option value="游戏">🎮 游戏娱乐</option>
-                  <option value="文档">📄 文档资料</option>
-                  <option value="媒体">🎵 媒体文件</option>
-                  <option value="其他">📦 其他资源</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">文件大小</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="例如: 128MB"
-                  value={formData.size}
-                  onChange={(e) => setFormData({...formData, size: e.target.value})}
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">版本信息</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="例如: v2.1.0"
-                  value={formData.version}
-                  onChange={(e) => setFormData({...formData, version: e.target.value})}
-                  required
-                />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">下载链接</label>
+              <input
+                type="text"
+                placeholder="文件名称"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                required
+              />
+              <input
+                type="text"
+                placeholder="分类"
+                value={formData.category}
+                onChange={(e) => setFormData({...formData, category: e.target.value})}
+              />
               <input
                 type="url"
-                className="form-control"
-                placeholder="https://example.com/download"
+                placeholder="下载链接"
                 value={formData.url}
                 onChange={(e) => setFormData({...formData, url: e.target.value})}
                 required
               />
+              <input
+                type="number"
+                placeholder="文件大小 (字节)"
+                value={formData.size}
+                onChange={(e) => setFormData({...formData, size: e.target.value})}
+              />
             </div>
-            <div className="form-group">
-              <label className="form-label">资源描述</label>
-              <textarea
-                className="form-control"
-                rows="4"
-                placeholder="详细描述这个资源的功能和特点..."
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                required
-              ></textarea>
-            </div>
-            <div className="btn-group">
-              <button type="submit" className="btn btn-success btn-lg">
-                <i className="bi bi-check-circle"></i>
-                {editingFile ? '更新资源' : '添加资源'}
+            <textarea
+              placeholder="文件描述"
+              value={formData.description}
+              onChange={(e) => setFormData({...formData, description: e.target.value})}
+              rows="3"
+            />
+            <div className="form-actions">
+              <button type="button" onClick={() => setShowAddForm(false)} className="btn btn-secondary">
+                取消
               </button>
-              <button type="button" className="btn btn-secondary btn-lg" onClick={resetForm}>
-                <i className="bi bi-x-circle"></i>
-                取消操作
+              <button type="submit" className="btn btn-primary">
+                添加文件
               </button>
             </div>
           </form>
         </div>
+      )}
+
+      <div className="files-table">
+        <table>
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>分类</th>
+              <th>大小</th>
+              <th>下载次数</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {files.map(file => (
+              <tr key={file.id}>
+                <td>
+                  <div className="file-info">
+                    <strong>{file.name}</strong>
+                    {file.description && <p>{file.description}</p>}
+                  </div>
+                </td>
+                <td>
+                  <span className="category-tag">{file.category || 'uncategorized'}</span>
+                </td>
+                <td>{file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : '-'}</td>
+                <td>{file.downloads || 0}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button 
+                      className="btn btn-sm btn-danger"
+                      onClick={() => handleDeleteFile(file.id)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 
-  const renderFilesList = () => (
-    <div className="fade-in">
-      <div className="content-card">
-        <div className="card-header">
-          <h2 className="card-title">
-            <i className="bi bi-collection"></i>
-            资源管理中心
-            <span className="badge badge-primary" style={{marginLeft: '1rem'}}>{files.length} 个资源</span>
-          </h2>
+  const renderSettings = () => (
+    <div className="settings">
+      <div className="section-header">
+        <h2><i className="bi bi-gear"></i> 系统设置</h2>
+      </div>
+      
+      <div className="settings-grid">
+        <div className="setting-card">
+          <div className="setting-icon">
+            <i className="bi bi-key"></i>
+          </div>
+          <div className="setting-content">
+            <h3>密码管理</h3>
+            <p>修改管理员登录密码</p>
+            <button 
+              className="btn btn-primary"
+              onClick={() => setShowPasswordModal(true)}
+            >
+              <i className="bi bi-key"></i> 修改密码
+            </button>
+          </div>
         </div>
-        <div className="card-body" style={{padding: 0}}>
-          {files.length === 0 ? (
-            <div className="empty-state">
-              <i className="bi bi-inbox"></i>
-              <h3>暂无资源</h3>
-              <p>点击侧边栏"添加资源"开始管理您的资源库</p>
-            </div>
-          ) : (
-            <div className="table-container">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>资源信息</th>
-                    <th>分类</th>
-                    <th>规格</th>
-                    <th>描述</th>
-                    <th>操作</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {files.map((file, index) => (
-                    <tr key={file.id} className="fade-in" style={{animationDelay: `${index * 0.05}s`}}>
-                      <td>
-                        <div>
-                          <strong style={{display: 'block'}}>{file.name}</strong>
-                          <small style={{color: 'var(--text-muted)'}}>版本 {file.version}</small>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="badge badge-primary">{file.category}</span>
-                      </td>
-                      <td>
-                        <div className="badge badge-secondary">{file.size}</div>
-                      </td>
-                      <td>
-                        <div style={{maxWidth: '200px'}}>
-                          <small style={{color: 'var(--text-muted)'}}>
-                            {file.description.length > 60 
-                              ? file.description.substring(0, 60) + '...' 
-                              : file.description}
-                          </small>
-                        </div>
-                      </td>
-                      <td>
-                        <div className="btn-group">
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => handleEdit(file)}
-                            title="编辑资源"
-                          >
-                            <i className="bi bi-pencil-square"></i>
-                          </button>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDelete(file.id)}
-                            title="删除资源"
-                          >
-                            <i className="bi bi-trash3"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+
+        <div className="setting-card">
+          <div className="setting-icon">
+            <i className="bi bi-palette"></i>
+          </div>
+          <div className="setting-content">
+            <h3>主题设置</h3>
+            <p>切换界面主题模式</p>
+            <ThemeToggle />
+          </div>
+        </div>
+
+        <div className="setting-card">
+          <div className="setting-icon">
+            <i className="bi bi-database"></i>
+          </div>
+          <div className="setting-content">
+            <h3>数据管理</h3>
+            <p>数据库维护和备份</p>
+            <button className="btn btn-secondary" disabled>
+              <i className="bi bi-download"></i> 导出数据
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -473,159 +593,100 @@ function AdminPanel() {
 
   if (loading) {
     return (
-      <div className="admin-layout">
-        <div className="loading-container" style={{width: '100%', minHeight: '100vh'}}>
-          <div className="spinner"></div>
-          <div className="loading-text">正在加载管理面板...</div>
+      <div className="loading-container">
+        <div className="loading-spinner">
+          <i className="bi bi-arrow-repeat spin"></i>
         </div>
+        <p>加载中...</p>
       </div>
     );
   }
 
   return (
-    <div className="admin-layout">
-      {/* 移动端菜单按钮 */}
-      <button 
-        className="mobile-menu-btn"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        <i className="bi bi-list"></i>
-      </button>
-
+    <div className="admin-container">
       {/* 侧边栏 */}
-      <div className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
+      <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
-          <div className="sidebar-brand">
-            <div className="brand-icon">
-              <i className="bi bi-cloud-download"></i>
-            </div>
-            <div className="brand-text">
-              <h1>资源管理</h1>
-              <p>高级控制面板</p>
-            </div>
-          </div>
+          <h2><i className="bi bi-speedometer2"></i> Noah Box</h2>
+          <button 
+            className="sidebar-toggle"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i className="bi bi-list"></i>
+          </button>
         </div>
-
+        
         <nav className="sidebar-nav">
-          <div className="nav-section">
-            <div className="nav-section-title">主要功能</div>
-            <div className="nav-item">
-              <a 
-                href="#" 
-                className={`nav-link ${activeSection === 'dashboard' ? 'active' : ''}`}
-                onClick={(e) => {e.preventDefault(); setActiveSection('dashboard'); setSidebarOpen(false);}}
-              >
-                <i className="nav-icon bi bi-speedometer2"></i>
-                仪表板
-              </a>
-            </div>
-            <div className="nav-item">
-              <a 
-                href="#" 
-                className={`nav-link ${activeSection === 'files' ? 'active' : ''}`}
-                onClick={(e) => {e.preventDefault(); setActiveSection('files'); setSidebarOpen(false);}}
-              >
-                <i className="nav-icon bi bi-collection"></i>
-                资源管理
-              </a>
-            </div>
-            <div className="nav-item">
-              <a 
-                href="#" 
-                className={`nav-link ${activeSection === 'add' ? 'active' : ''}`}
-                onClick={(e) => {e.preventDefault(); setActiveSection('add'); setShowAddForm(true); resetForm(); setSidebarOpen(false);}}
-              >
-                <i className="nav-icon bi bi-plus-circle"></i>
-                添加资源
-              </a>
-            </div>
-          </div>
-
-          <div className="nav-section">
-            <div className="nav-section-title">系统设置</div>
-            <div className="nav-item">
-              <div className="nav-link" style={{padding: '8px 16px'}}>
-                <ThemeToggle />
-              </div>
-            </div>
-            <div className="nav-item">
-              <a href="/change-password.html" className="nav-link">
-                <i className="nav-icon bi bi-shield-lock"></i>
-                安全设置
-              </a>
-            </div>
-            <div className="nav-item">
-              <a href="/" className="nav-link">
-                <i className="nav-icon bi bi-house"></i>
-                返回首页
-              </a>
-            </div>
-            <div className="nav-item">
-              <a 
-                href="#" 
-                className="nav-link"
-                onClick={(e) => {e.preventDefault(); handleLogout();}}
-              >
-                <i className="nav-icon bi bi-power"></i>
-                安全退出
-              </a>
-            </div>
-          </div>
+          <button 
+            className={`nav-item ${activeSection === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveSection('dashboard')}
+          >
+            <i className="bi bi-speedometer2"></i>
+            <span>仪表板</span>
+          </button>
+          
+          <button 
+            className={`nav-item ${activeSection === 'files' ? 'active' : ''}`}
+            onClick={() => setActiveSection('files')}
+          >
+            <i className="bi bi-folder"></i>
+            <span>文件管理</span>
+          </button>
+          
+          <button 
+            className={`nav-item ${activeSection === 'settings' ? 'active' : ''}`}
+            onClick={() => setActiveSection('settings')}
+          >
+            <i className="bi bi-gear"></i>
+            <span>系统设置</span>
+          </button>
         </nav>
 
-        <div className="sidebar-stats">
-          <div className="stats-grid">
-            <div className="stat-item">
-              <span className="stat-number">{stats.total}</span>
-              <span className="stat-label">总资源</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{Object.keys(stats.categories).length}</span>
-              <span className="stat-label">分类</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{stats.categories['软件'] || 0}</span>
-              <span className="stat-label">软件</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-number">{stats.categories['游戏'] || 0}</span>
-              <span className="stat-label">游戏</span>
-            </div>
-          </div>
+        <div className="sidebar-footer">
+          <button className="logout-btn" onClick={handleLogout}>
+            <i className="bi bi-box-arrow-right"></i>
+            <span>退出登录</span>
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {/* 主内容区域 */}
-      <div className="main-content">
-        <div className="top-bar">
-          <div>
-            <h1 className="page-title">
-              <i className="bi bi-gear-wide-connected"></i>
-              {activeSection === 'dashboard' && '仪表板'}
-              {activeSection === 'files' && '资源管理'}
-              {activeSection === 'add' && (editingFile ? '编辑资源' : '添加资源')}
-            </h1>
-            <p className="page-subtitle">
-              {activeSection === 'dashboard' && '系统概览与统计信息'}
-              {activeSection === 'files' && '管理您的所有资源文件'}
-              {activeSection === 'add' && '添加或编辑资源信息'}
-            </p>
+      {/* 主内容区 */}
+      <main className="main-content">
+        <header className="main-header">
+          <button 
+            className="mobile-menu-btn"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <i className="bi bi-list"></i>
+          </button>
+          
+          <div className="header-actions">
+            <ThemeToggle />
+            <button className="btn btn-outline" onClick={handleLogout}>
+              <i className="bi bi-box-arrow-right"></i>
+              退出
+            </button>
           </div>
-          <div className="top-actions">
-            <span style={{color: 'var(--text-muted)', fontSize: '0.9rem'}}>
-              欢迎回来，管理员
-            </span>
-          </div>
+        </header>
+
+        <div className="content-area">
+          {activeSection === 'dashboard' && renderDashboard()}
+          {activeSection === 'files' && renderFileManagement()}
+          {activeSection === 'settings' && renderSettings()}
         </div>
+      </main>
 
-        {activeSection === 'dashboard' && renderDashboard()}
-        {activeSection === 'files' && renderFilesList()}
-        {activeSection === 'add' && renderAddForm()}
-      </div>
+      {/* 密码修改模态框 */}
+      <PasswordModal 
+        isOpen={showPasswordModal}
+        onClose={() => setShowPasswordModal(false)}
+        sessionId={sessionId}
+      />
     </div>
   );
 }
 
+// 渲染应用
 const container = document.getElementById('root');
 const root = createRoot(container);
-root.render(<AdminPanel />);
+root.render(<AdminApp />);

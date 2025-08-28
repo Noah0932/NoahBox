@@ -68,8 +68,13 @@ app.post('/api/login', async (c) => {
       }, 400);
     }
     
-    // 简单的管理员验证（生产环境应使用加密密码和数据库）
-    if (username === 'admin' && password === 'admin123') {
+    // 从数据库获取管理员密码
+    const { DB } = c.env;
+    const { results } = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').all();
+    const storedPassword = results.length > 0 ? results[0].password : 'admin123';
+    
+    // 验证管理员账户
+    if (username === 'admin' && password === storedPassword) {
       // 生成会话ID
       const sessionId = Math.random().toString(36).substring(2);
       
@@ -151,20 +156,44 @@ const requireAuth = async (c, next) => {
 
 // 修改密码
 app.post('/api/change-password', requireAuth, async (c) => {
+  const { DB } = c.env;
   const { currentPassword, newPassword } = await c.req.json();
   
-  // 验证当前密码（这里简化处理，实际应用中应该从数据库验证）
-  if (currentPassword !== 'admin123') {
-    return c.json({ success: false, message: '当前密码错误' }, 400);
+  if (!currentPassword || !newPassword) {
+    return c.json({ success: false, message: '请填写完整信息' }, 400);
   }
   
-  if (!newPassword || newPassword.length < 6) {
+  if (newPassword.length < 6) {
     return c.json({ success: false, message: '新密码长度至少6位' }, 400);
   }
   
-  // 在实际应用中，这里应该更新数据库中的密码
-  // 为了演示，我们只是返回成功
-  return c.json({ success: true, message: '密码修改成功，请重新登录' });
+  try {
+    // 获取当前存储的密码
+    const { results } = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').all();
+    const currentStoredPassword = results.length > 0 ? results[0].password : 'admin123';
+    
+    // 验证当前密码
+    if (currentPassword !== currentStoredPassword) {
+      return c.json({ success: false, message: '当前密码错误' }, 400);
+    }
+    
+    // 更新密码到数据库
+    const { success } = await DB.prepare(
+      'INSERT OR REPLACE INTO admin_config (id, password, updated_at) VALUES (1, ?, datetime("now"))'
+    ).bind(newPassword).run();
+    
+    if (!success) {
+      return c.json({ success: false, message: '密码更新失败，请稍后重试' }, 500);
+    }
+    
+    // 清除所有会话，强制重新登录
+    sessions.clear();
+    
+    return c.json({ success: true, message: '密码修改成功，请重新登录' });
+  } catch (error) {
+    console.error('Password change error:', error);
+    return c.json({ success: false, message: '系统错误，请稍后重试' }, 500);
+  }
 });
 
 // API路由
@@ -285,6 +314,15 @@ app.get('/api/init', async (c) => {
   try {
     // 创建表结构
     await DB.exec("CREATE TABLE IF NOT EXISTS files (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, description TEXT, url TEXT NOT NULL, category TEXT, size INTEGER, type TEXT, downloads INTEGER DEFAULT 0, created_at TEXT)");
+    
+    // 创建管理员配置表
+    await DB.exec("CREATE TABLE IF NOT EXISTS admin_config (id INTEGER PRIMARY KEY, password TEXT NOT NULL, updated_at TEXT)");
+    
+    // 初始化默认管理员密码
+    const { results } = await DB.prepare('SELECT COUNT(*) as count FROM admin_config WHERE id = 1').all();
+    if (results[0].count === 0) {
+      await DB.prepare('INSERT INTO admin_config (id, password, updated_at) VALUES (1, ?, datetime("now"))').bind('admin123').run();
+    }
     
     // 添加示例数据
     try {
