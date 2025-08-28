@@ -3,290 +3,468 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>下载中心 - Noah Box</title>
-    <link rel="stylesheet" href="code-editor-theme.css">
+    <title>NoahBox - 文件下载站</title>
+    <link rel="stylesheet" href="responsive-theme.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <a href="/" class="logo">Noah Box</a>
-                <nav class="nav">
-                    <a href="/" class="nav-button">
-                        🏠 home
-                    </a>
-                    <a href="/admin-code.html" class="nav-button">
-                        ⚙️ admin
-                    </a>
-                    <button class="nav-button" onclick="toggleTheme()">
-                        🌓 theme
+    <div class="container">
+        <!-- 左侧边栏 -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i class="fas fa-cloud-download-alt"></i>
+                <h1>NoahBox</h1>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-item active">
+                    <i class="fas fa-download"></i>
+                    <span>文件下载</span>
+                </div>
+                <div class="nav-item" onclick="showAddLinkModal()">
+                    <i class="fas fa-plus"></i>
+                    <span>添加链接</span>
+                </div>
+                <div class="nav-item" onclick="window.location.href='/admin-code.html'">
+                    <i class="fas fa-cog"></i>
+                    <span>管理后台</span>
+                </div>
+            </nav>
+
+            <!-- 分类筛选 -->
+            <div class="category-filter">
+                <h3>文件分类</h3>
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-category="all">
+                        <i class="fas fa-th"></i>
+                        全部文件
                     </button>
-                </nav>
+                    <button class="filter-btn" data-category="software">
+                        <i class="fas fa-desktop"></i>
+                        软件应用
+                    </button>
+                    <button class="filter-btn" data-category="document">
+                        <i class="fas fa-file-alt"></i>
+                        文档资料
+                    </button>
+                    <button class="filter-btn" data-category="media">
+                        <i class="fas fa-play-circle"></i>
+                        媒体文件
+                    </button>
+                    <button class="filter-btn" data-category="other">
+                        <i class="fas fa-folder"></i>
+                        其他文件
+                    </button>
+                </div>
+            </div>
+
+            <!-- 主题切换 -->
+            <div class="theme-toggle">
+                <button id="themeToggle" class="theme-btn">
+                    <i class="fas fa-moon"></i>
+                    <span>深色模式</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-info">
+                    <h2>文件下载中心</h2>
+                    <p>安全、快速的文件分享平台</p>
+                </div>
+                <div class="header-stats">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalFiles">0</span>
+                        <span class="stat-label">总文件数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalDownloads">0</span>
+                        <span class="stat-label">总下载量</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 搜索栏 -->
+            <div class="search-section">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="搜索文件名或描述...">
+                </div>
+            </div>
+
+            <!-- 文件列表 -->
+            <div class="files-grid" id="filesContainer">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>正在加载文件列表...</p>
+                </div>
+            </div>
+
+            <!-- 空状态 -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i class="fas fa-folder-open"></i>
+                <h3>暂无文件</h3>
+                <p>还没有上传任何文件，点击"添加链接"开始分享吧！</p>
+                <button class="btn-primary" onclick="showAddLinkModal()">
+                    <i class="fas fa-plus"></i>
+                    添加第一个链接
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加链接模态框 -->
+    <div class="modal-overlay" id="addLinkModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>添加下载链接</h3>
+                <button class="modal-close" onclick="hideAddLinkModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addLinkForm">
+                    <div class="form-group">
+                        <label for="fileName">文件名称</label>
+                        <input type="text" id="fileName" placeholder="请输入文件名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileUrl">下载链接</label>
+                        <input type="url" id="fileUrl" placeholder="https://example.com/file.zip" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileCategory">文件分类</label>
+                        <select id="fileCategory" required>
+                            <option value="">请选择分类</option>
+                            <option value="software">软件应用</option>
+                            <option value="document">文档资料</option>
+                            <option value="media">媒体文件</option>
+                            <option value="other">其他文件</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileDescription">文件描述</label>
+                        <textarea id="fileDescription" placeholder="请输入文件描述（可选）" rows="3"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="hideAddLinkModal()">取消</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-plus"></i>
+                            添加链接
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
-    </header>
-
-    <main class="main">
-        <section class="search-section">
-            <div class="container">
-                <div style="text-align: center; margin-bottom: 32px;">
-                    <h1 class="code-title" style="font-size: 28px; margin-bottom: 12px;">
-                        <span class="code-comment">// </span>
-                        <span class="code-function">downloadResource</span>
-                        <span class="code-operator">()</span>
-                    </h1>
-                    <p style="color: var(--text-secondary); font-size: 14px;">
-                        快速查找和下载您需要的资源文件
-                    </p>
-                </div>
-                
-                <div class="search-container">
-                    <span class="search-icon">🔍</span>
-                    <input 
-                        type="text" 
-                        class="search-input" 
-                        placeholder="// 搜索文件名或类型..." 
-                        id="searchInput"
-                        onkeyup="searchFiles()"
-                    >
-                </div>
-            </div>
-        </section>
-
-        <section class="stats-section">
-            <div class="container">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">let found =</div>
-                        <div class="stat-value" id="foundCount">0</div>
-                        <div class="stat-description">// 找到资源</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">let total =</div>
-                        <div class="stat-value" id="totalCount">0</div>
-                        <div class="stat-description">// 总计资源</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section class="files-section">
-            <div class="container">
-                <div id="loadingMessage" class="message" style="text-align: center; display: none;">
-                    <span class="loading"></span> 正在加载资源列表...
-                </div>
-
-                <div id="errorMessage" class="message error" style="display: none;"></div>
-
-                <div id="fileGrid" class="file-grid"></div>
-            </div>
-        </section>
-    </main>
+    </div>
 
     <script>
+        // 全局变量
         let allFiles = [];
-        let filteredFiles = [];
+        let currentCategory = 'all';
+        let currentTheme = localStorage.getItem('theme') || 'light';
 
-        function toggleTheme() {
-            console.log('Theme toggle clicked');
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            loadFiles();
+            setupEventListeners();
+        });
+
+        // 主题初始化
+        function initTheme() {
+            document.body.setAttribute('data-theme', currentTheme);
+            updateThemeButton();
         }
 
-        async function loadFiles() {
-            const loadingEl = document.getElementById('loadingMessage');
-            const errorEl = document.getElementById('errorMessage');
-            const fileGridEl = document.getElementById('fileGrid');
-
-            loadingEl.style.display = 'block';
-            errorEl.style.display = 'none';
-            fileGridEl.innerHTML = '';
-
-            try {
-                const response = await fetch('/api/files');
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const data = await response.json();
-                allFiles = data.files || [];
-                filteredFiles = [...allFiles];
-                
-                loadingEl.style.display = 'none';
-                renderFiles();
-                updateStats();
-            } catch (error) {
-                console.error('加载文件失败:', error);
-                loadingEl.style.display = 'none';
-                errorEl.textContent = `// Error: ${error.message}`;
-                errorEl.style.display = 'block';
-                
-                showExampleFiles();
+        // 更新主题按钮
+        function updateThemeButton() {
+            const themeBtn = document.getElementById('themeToggle');
+            const icon = themeBtn.querySelector('i');
+            const text = themeBtn.querySelector('span');
+            
+            if (currentTheme === 'dark') {
+                icon.className = 'fas fa-sun';
+                text.textContent = '浅色模式';
+            } else {
+                icon.className = 'fas fa-moon';
+                text.textContent = '深色模式';
             }
         }
 
-        function showExampleFiles() {
-            allFiles = [
-                {
-                    name: 'README.md',
-                    size: '2.5 KB',
-                    modified: '2024-01-15',
-                    type: 'Markdown'
-                },
-                {
-                    name: 'config.json',
-                    size: '1.2 KB',
-                    modified: '2024-01-14',
-                    type: 'JSON'
-                },
-                {
-                    name: 'app.js',
-                    size: '15.8 KB',
-                    modified: '2024-01-13',
-                    type: 'JavaScript'
-                },
-                {
-                    name: 'style.css',
-                    size: '8.4 KB',
-                    modified: '2024-01-12',
-                    type: 'CSS'
-                },
-                {
-                    name: 'index.html',
-                    size: '3.2 KB',
-                    modified: '2024-01-11',
-                    type: 'HTML'
-                },
-                {
-                    name: 'package.json',
-                    size: '1.1 KB',
-                    modified: '2024-01-10',
-                    type: 'JSON'
-                },
-                {
-                    name: 'screenshot.png',
-                    size: '245 KB',
-                    modified: '2024-01-09',
-                    type: 'Image'
-                },
-                {
-                    name: 'demo.mp4',
-                    size: '12.5 MB',
-                    modified: '2024-01-08',
-                    type: 'Video'
-                }
-            ];
-            filteredFiles = [...allFiles];
-            renderFiles();
-            updateStats();
+        // 切换主题
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeButton();
         }
 
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 主题切换
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+            // 分类筛选
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    currentCategory = this.dataset.category;
+                    filterFiles();
+                });
+            });
+
+            // 搜索功能
+            document.getElementById('searchInput').addEventListener('input', function() {
+                filterFiles();
+            });
+
+            // 添加链接表单
+            document.getElementById('addLinkForm').addEventListener('submit', handleAddLink);
+
+            // 模态框点击外部关闭
+            document.getElementById('addLinkModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    hideAddLinkModal();
+                }
+            });
+        }
+
+        // 加载文件列表
+        async function loadFiles() {
+            try {
+                const response = await fetch('/api/files');
+                if (response.ok) {
+                    allFiles = await response.json();
+                    updateStats();
+                    renderFiles();
+                } else {
+                    throw new Error('Failed to load files');
+                }
+            } catch (error) {
+                console.error('Error loading files:', error);
+                showEmptyState();
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            document.getElementById('totalFiles').textContent = allFiles.length;
+            const totalDownloads = allFiles.reduce((sum, file) => sum + (file.downloads || 0), 0);
+            document.getElementById('totalDownloads').textContent = totalDownloads;
+        }
+
+        // 渲染文件列表
         function renderFiles() {
-            const fileGridEl = document.getElementById('fileGrid');
-            
+            const container = document.getElementById('filesContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (allFiles.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.innerHTML = '';
+
+            const filteredFiles = getFilteredFiles();
+
             if (filteredFiles.length === 0) {
-                fileGridEl.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📁</div>
-                        <h3>// 暂无资源</h3>
-                        <p>没有找到匹配的文件，请尝试其他搜索关键词</p>
+                container.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        <h3>未找到匹配的文件</h3>
+                        <p>尝试调整搜索条件或选择其他分类</p>
                     </div>
                 `;
                 return;
             }
 
-            fileGridEl.innerHTML = filteredFiles.map(file => {
-                const fileIcon = getFileIcon(file.name, file.type);
-                return `
-                    <div class="file-card">
-                        <div class="file-header">
-                            <div class="file-icon">${fileIcon}</div>
-                            <div>
-                                <div class="file-name">${escapeHtml(file.name)}</div>
-                                <div class="file-meta">
-                                    ${file.size || 'unknown'} • ${file.type || 'file'}
-                                </div>
-                            </div>
-                        </div>
-                        <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace;">
-                            // modified: ${file.modified || 'unknown'}
-                        </div>
-                        <div class="file-actions">
-                            <button class="btn btn-primary" onclick="downloadFile('${escapeHtml(file.name)}')">
-                                ⬇️ download
-                            </button>
-                            <button class="btn btn-secondary" onclick="previewFile('${escapeHtml(file.name)}')">
-                                👁️ preview
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
+            filteredFiles.forEach(file => {
+                const fileCard = createFileCard(file);
+                container.appendChild(fileCard);
+            });
         }
 
-        function getFileIcon(filename, type) {
-            const ext = filename.split('.').pop().toLowerCase();
-            
-            if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) return '📜';
-            if (['html', 'htm'].includes(ext)) return '🌐';
-            if (['css', 'scss', 'sass', 'less'].includes(ext)) return '🎨';
-            if (['json', 'xml', 'yaml', 'yml'].includes(ext)) return '⚙️';
-            if (['md', 'txt', 'log'].includes(ext)) return '📄';
-            if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext)) return '🖼️';
-            if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return '🎬';
-            if (['mp3', 'wav', 'flac'].includes(ext)) return '🎵';
-            if (['zip', 'rar', '7z', 'tar'].includes(ext)) return '📦';
-            if (['pdf'].includes(ext)) return '📋';
-            if (['doc', 'docx'].includes(ext)) return '📝';
-            if (['xls', 'xlsx'].includes(ext)) return '📊';
-            if (['sh', 'bat', 'cmd'].includes(ext)) return '⚡';
-            
-            return '📄';
-        }
+        // 获取筛选后的文件
+        function getFilteredFiles() {
+            let filtered = allFiles;
 
-        function searchFiles() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
-            
-            if (searchTerm === '') {
-                filteredFiles = [...allFiles];
-            } else {
-                filteredFiles = allFiles.filter(file => 
+            // 分类筛选
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(file => file.category === currentCategory);
+            }
+
+            // 搜索筛选
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            if (searchTerm) {
+                filtered = filtered.filter(file => 
                     file.name.toLowerCase().includes(searchTerm) ||
-                    (file.type && file.type.toLowerCase().includes(searchTerm))
+                    (file.description && file.description.toLowerCase().includes(searchTerm))
                 );
             }
+
+            return filtered;
+        }
+
+        // 创建文件卡片
+        function createFileCard(file) {
+            const card = document.createElement('div');
+            card.className = 'file-card';
             
+            const categoryIcons = {
+                software: 'fas fa-desktop',
+                document: 'fas fa-file-alt',
+                media: 'fas fa-play-circle',
+                other: 'fas fa-file'
+            };
+
+            const categoryNames = {
+                software: '软件应用',
+                document: '文档资料',
+                media: '媒体文件',
+                other: '其他文件'
+            };
+
+            card.innerHTML = `
+                <div class="file-icon">
+                    <i class="${categoryIcons[file.category] || 'fas fa-file'}"></i>
+                </div>
+                <div class="file-info">
+                    <h3 class="file-name">${escapeHtml(file.name)}</h3>
+                    <p class="file-description">${escapeHtml(file.description || '暂无描述')}</p>
+                    <div class="file-meta">
+                        <span class="file-category">
+                            <i class="fas fa-tag"></i>
+                            ${categoryNames[file.category] || '其他'}
+                        </span>
+                        <span class="file-downloads">
+                            <i class="fas fa-download"></i>
+                            ${file.downloads || 0} 次下载
+                        </span>
+                    </div>
+                </div>
+                <div class="file-actions">
+                    <button class="btn-download" onclick="downloadFile('${file.id}', '${escapeHtml(file.url)}')">
+                        <i class="fas fa-download"></i>
+                        下载
+                    </button>
+                </div>
+            `;
+
+            return card;
+        }
+
+        // 筛选文件
+        function filterFiles() {
             renderFiles();
-            updateStats();
         }
 
-        function updateStats() {
-            document.getElementById('foundCount').textContent = filteredFiles.length;
-            document.getElementById('totalCount').textContent = allFiles.length;
+        // 显示空状态
+        function showEmptyState() {
+            document.getElementById('filesContainer').innerHTML = '';
+            document.getElementById('emptyState').style.display = 'block';
         }
 
-        function downloadFile(filename) {
-            const downloadUrl = `/api/download/${encodeURIComponent(filename)}`;
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        // 显示添加链接模态框
+        function showAddLinkModal() {
+            document.getElementById('addLinkModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
         }
 
-        function previewFile(filename) {
-            const previewUrl = `/api/preview/${encodeURIComponent(filename)}`;
-            window.open(previewUrl, '_blank');
+        // 隐藏添加链接模态框
+        function hideAddLinkModal() {
+            document.getElementById('addLinkModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            document.getElementById('addLinkForm').reset();
         }
 
+        // 处理添加链接
+        async function handleAddLink(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('fileName').value,
+                url: document.getElementById('fileUrl').value,
+                category: document.getElementById('fileCategory').value,
+                description: document.getElementById('fileDescription').value
+            };
+
+            try {
+                const response = await fetch('/api/files', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    hideAddLinkModal();
+                    loadFiles(); // 重新加载文件列表
+                    showNotification('链接添加成功！', 'success');
+                } else {
+                    throw new Error('Failed to add link');
+                }
+            } catch (error) {
+                console.error('Error adding link:', error);
+                showNotification('添加链接失败，请重试', 'error');
+            }
+        }
+
+        // 下载文件
+        async function downloadFile(fileId, fileUrl) {
+            try {
+                // 记录下载次数
+                await fetch(`/api/files/${fileId}/download`, {
+                    method: 'POST'
+                });
+
+                // 打开下载链接
+                window.open(fileUrl, '_blank');
+                
+                // 更新下载次数显示
+                loadFiles();
+            } catch (error) {
+                console.error('Error recording download:', error);
+                // 即使记录失败也要允许下载
+                window.open(fileUrl, '_blank');
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // HTML转义
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            loadFiles();
-        });
     </script>
 </body>
 </html>

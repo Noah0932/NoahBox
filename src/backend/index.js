@@ -34,16 +34,45 @@ app.get('/change-password', serveStatic({ path: './public/change-password.html' 
 app.get('/*', serveStatic({ root: './' }));
 
 /**
- * 会话存储
+ * 会话存储 - 简化版本
  * 在生产环境中应该使用 Redis 或数据库存储
  * 当前使用内存存储仅用于演示
  * 
- * @type {Map<string, {username: string, loginTime: number}>}
+ * @type {Set<string>}
  */
-const sessions = new Map();
+const sessions = new Set();
 
 /**
- * 用户登录接口
+ * 生成会话ID
+ * @returns {string} 唯一的会话标识符
+ */
+function generateSessionId() {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+}
+
+/**
+ * 验证会话中间件 - 修复版本
+ * @param {Context} c - Hono 上下文
+ * @param {Function} next - 下一个中间件
+ */
+const requireAuth = async (c, next) => {
+  const sessionId = c.req.header('X-Session-ID') || c.req.query('session');
+  
+  // 如果是登录请求，跳过验证
+  if (c.req.path === '/api/login') {
+    await next();
+    return;
+  }
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    return c.json({ error: 'Unauthorized', needLogin: true }, 401);
+  }
+  
+  await next();
+};
+
+/**
+ * 用户登录接口 - 修复版本
  * 验证用户凭据并创建会话
  * 
  * @route POST /api/login
@@ -67,6 +96,60 @@ app.post('/api/login', async (c) => {
         message: '用户名和密码不能为空' 
       }, 400);
     }
+
+    // 从数据库获取管理员密码
+    let adminPassword = 'admin123'; // 默认密码
+    try {
+      const result = await c.env.DB.prepare('SELECT password FROM admin_config WHERE id = 1').first();
+      if (result && result.password) {
+        adminPassword = result.password;
+      }
+    } catch (dbError) {
+      console.log('Database not available, using default password');
+    }
+
+    // 验证用户凭据
+    if (username === 'admin' && password === adminPassword) {
+      const sessionId = generateSessionId();
+      sessions.add(sessionId);
+      
+      return c.json({
+        success: true,
+        sessionId: sessionId,
+        username: username,
+        message: '登录成功'
+      });
+    } else {
+      return c.json({
+        success: false,
+        message: '用户名或密码错误'
+      }, 401);
+    }
+  } catch (error) {
+    console.error('Login error:', error);
+    return c.json({
+      success: false,
+      message: '登录过程中发生错误'
+    }, 500);
+  }
+});
+
+/**
+ * 检查认证状态接口
+ * @route GET /api/auth/status
+ */
+app.get('/api/auth/status', async (c) => {
+  const sessionId = c.req.header('X-Session-ID');
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    return c.json({ authenticated: false }, 401);
+  }
+  
+  return c.json({ 
+    authenticated: true,
+    username: 'admin'
+  });
+});
     
     // 从数据库获取管理员密码
     let storedPassword = 'admin123'; // 默认密码
