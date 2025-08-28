@@ -1,23 +1,97 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Noah Box - 精品资源下载站</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/code-theme.css">
-  <link rel="stylesheet" href="/home-styles.css">
-  <link rel="stylesheet" href="/theme-styles.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noah Box - 代码风格文件下载站</title>
+    <link rel="stylesheet" href="code-editor-theme.css">
 </head>
 <body>
-  <div id="root"></div>
-  <script src="/code-particles.js"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="/home-bundle.js"></script>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">Noah Box</a>
+                <nav class="nav">
+                    <a href="/downloads.html" class="nav-button">
+                        📁 downloads
+                    </a>
+                    <a href="/admin-code.html" class="nav-button">
+                        ⚙️ admin
+                    </a>
+                    <button class="nav-button" onclick="toggleTheme()">
+                        🌓 theme
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero-code">
+            <div class="container">
+                <div class="hero-content">
+                    <div class="code-title">
+                        <span class="code-comment">// </span>
+                        <span class="code-keyword">const</span>
+                        <span class="code-variable"> everything</span>
+                        <span class="code-operator"> = </span>
+                        <span class="code-string">"Noah Box"</span><br>
+                        <span class="code-keyword">as</span>
+                        <span class="code-function"> Code</span>
+                    </div>
+                    <div class="hero-description">
+                        发现、下载、分享优质资源，采用现代化技术栈，为开发者和创作者<br>
+                        提供极致的资源管理体验。
+                    </div>
+                    <div class="hero-actions">
+                        <a href="/downloads.html" class="btn btn-primary">
+                            ▶ start()
+                        </a>
+                        <a href="#features" class="btn btn-secondary">
+                            📖 docs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section" id="features">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">const files =</div>
+                        <div class="stat-value" id="fileCount">0</div>
+                        <div class="stat-description">// 精选资源</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">const categories =</div>
+                        <div class="stat-value" id="categoryCount">0</div>
+                        <div class="stat-description">// 资源分类</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">const downloads =</div>
+                        <div class="stat-value" id="downloadCount">0</div>
+                        <div class="stat-description">// 下载次数</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function toggleTheme() {
+            // 这里可以实现主题切换逻辑
+            console.log('Theme toggle clicked');
+        }
+
+        // 模拟统计数据
+        function updateStats() {
+            document.getElementById('fileCount').textContent = '24';
+            document.getElementById('categoryCount').textContent = '8';
+            document.getElementById('downloadCount').textContent = '156';
+        }
+
+        document.addEventListener('DOMContentLoaded', updateStats);
+    </script>
 </body>
 </html>

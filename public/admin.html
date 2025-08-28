@@ -1,20 +1,492 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>管理控制台 - 资源下载站</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="/admin-styles.css">
-  <link rel="stylesheet" href="/theme-styles.css">
-  <link rel="stylesheet" href="/password-modal.css">
-  <link rel="stylesheet" href="/settings-fix.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - NoahBox</title>
+    <link rel="stylesheet" href="simple-theme.css">
+    <style>
+        .admin-container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: calc(100vh - 80px);
+            gap: 2rem;
+        }
+
+        .admin-sidebar {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            height: fit-content;
+        }
+
+        .admin-content {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .file-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            margin: 2rem 0;
+            transition: all 0.2s;
+        }
+
+        .file-upload-area:hover {
+            border-color: var(--primary-color);
+            background: var(--card-bg);
+        }
+
+        .file-upload-area.dragover {
+            border-color: var(--primary-color);
+            background: var(--card-bg);
+        }
+
+        @media (max-width: 768px) {
+            .admin-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="root"></div>
-  <script src="/admin-bundle.js"></script>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">NoahBox 管理后台</a>
+                <nav class="nav">
+                    <a href="/">返回首页</a>
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                    <button class="btn btn-secondary" onclick="logout()">退出登录</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="admin-container">
+                <aside class="admin-sidebar">
+                    <h3 style="margin-bottom: 1rem;">管理菜单</h3>
+                    <ul class="sidebar-menu">
+                        <li><a href="#dashboard" class="menu-link active" onclick="showSection('dashboard')">📊 仪表盘</a></li>
+                        <li><a href="#files" class="menu-link" onclick="showSection('files')">📁 文件管理</a></li>
+                        <li><a href="#upload" class="menu-link" onclick="showSection('upload')">⬆️ 文件上传</a></li>
+                        <li><a href="#settings" class="menu-link" onclick="showSection('settings')">⚙️ 系统设置</a></li>
+                    </ul>
+                </aside>
+
+                <main class="admin-content">
+                    <!-- 仪表盘 -->
+                    <section id="dashboard" class="content-section active">
+                        <h2 style="margin-bottom: 2rem;">仪表盘</h2>
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-number" id="totalFiles">0</div>
+                                <div>总文件数</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="totalSize">0 MB</div>
+                                <div>总大小</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-number" id="todayDownloads">0</div>
+                                <div>今日下载</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h3 style="margin-bottom: 1rem;">系统状态</h3>
+                            <p>✅ 系统运行正常</p>
+                            <p>✅ 数据库连接正常</p>
+                            <p>✅ 存储空间充足</p>
+                        </div>
+                    </section>
+
+                    <!-- 文件管理 -->
+                    <section id="files" class="content-section">
+                        <h2 style="margin-bottom: 2rem;">文件管理</h2>
+                        <div id="adminFileList">
+                            <div class="message">正在加载文件列表...</div>
+                        </div>
+                    </section>
+
+                    <!-- 文件上传 -->
+                    <section id="upload" class="content-section">
+                        <h2 style="margin-bottom: 2rem;">文件上传</h2>
+                        <div class="file-upload-area" id="uploadArea">
+                            <p style="font-size: 1.2rem; margin-bottom: 1rem;">📁 拖拽文件到此处或点击选择</p>
+                            <input type="file" id="fileInput" multiple style="display: none;">
+                            <button class="btn" onclick="document.getElementById('fileInput').click()">选择文件</button>
+                        </div>
+                        <div id="uploadProgress" style="display: none;">
+                            <div class="message">正在上传文件...</div>
+                        </div>
+                    </section>
+
+                    <!-- 系统设置 -->
+                    <section id="settings" class="content-section">
+                        <h2 style="margin-bottom: 2rem;">系统设置</h2>
+                        <div class="card">
+                            <h3 style="margin-bottom: 1rem;">修改密码</h3>
+                            <form id="passwordForm">
+                                <div class="form-group">
+                                    <label class="form-label">当前密码</label>
+                                    <input type="password" class="form-input" id="currentPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">新密码</label>
+                                    <input type="password" class="form-input" id="newPassword" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">确认新密码</label>
+                                    <input type="password" class="form-input" id="confirmPassword" required>
+                                </div>
+                                <button type="submit" class="btn">修改密码</button>
+                            </form>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 主题切换功能
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        // 初始化主题
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        // 显示指定部分
+        function showSection(sectionId) {
+            // 隐藏所有部分
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 移除所有菜单项的active类
+            document.querySelectorAll('.menu-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 显示指定部分
+            document.getElementById(sectionId).classList.add('active');
+            
+            // 添加active类到对应菜单项
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            
+            // 根据部分加载相应数据
+            if (sectionId === 'files') {
+                loadAdminFiles();
+            } else if (sectionId === 'dashboard') {
+                loadDashboardStats();
+            }
+        }
+
+        // 加载仪表盘统计
+        async function loadDashboardStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalFiles').textContent = stats.totalFiles || 0;
+                    document.getElementById('totalSize').textContent = stats.totalSize || '0 MB';
+                    document.getElementById('todayDownloads').textContent = stats.todayDownloads || 0;
+                }
+            } catch (error) {
+                console.error('加载统计数据失败:', error);
+                // 显示示例数据
+                document.getElementById('totalFiles').textContent = '12';
+                document.getElementById('totalSize').textContent = '156 MB';
+                document.getElementById('todayDownloads').textContent = '8';
+            }
+        }
+
+        // 加载管理员文件列表
+        async function loadAdminFiles() {
+            const fileListEl = document.getElementById('adminFileList');
+            fileListEl.innerHTML = '<div class="message">正在加载文件列表...</div>';
+
+            try {
+                const response = await fetch('/api/admin/files');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const files = data.files || [];
+                
+                if (files.length === 0) {
+                    fileListEl.innerHTML = '<div class="message">暂无文件</div>';
+                    return;
+                }
+
+                fileListEl.innerHTML = files.map(file => `
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: 600; margin-bottom: 0.5rem;">${escapeHtml(file.name)}</div>
+                                <div style="font-size: 0.9rem; opacity: 0.7;">
+                                    大小: ${file.size || '未知'} | 修改时间: ${file.modified || '未知'}
+                                </div>
+                            </div>
+                            <div>
+                                <button class="btn btn-secondary" onclick="deleteFile('${escapeHtml(file.name)}')" style="margin-left: 0.5rem;">
+                                    删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('加载文件失败:', error);
+                fileListEl.innerHTML = '<div class="message error">加载文件失败</div>';
+            }
+        }
+
+        // 删除文件
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/admin/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    alert('文件删除成功');
+                    loadAdminFiles();
+                } else {
+                    alert('文件删除失败');
+                }
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                alert('文件删除失败');
+            }
+        }
+
+        // 文件上传
+        function setupFileUpload() {
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+
+            // 拖拽上传
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                uploadFiles(files);
+            });
+
+            // 文件选择上传
+            fileInput.addEventListener('change', (e) => {
+                uploadFiles(e.target.files);
+            });
+        }
+
+        // 上传文件
+        async function uploadFiles(files) {
+            if (files.length === 0) return;
+
+            const progressEl = document.getElementById('uploadProgress');
+            progressEl.style.display = 'block';
+
+            for (let file of files) {
+                try {
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    const response = await fetch('/api/admin/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        console.log(`文件 ${file.name} 上传成功`);
+                    } else {
+                        console.error(`文件 ${file.name} 上传失败`);
+                    }
+                } catch (error) {
+                    console.error(`文件 ${file.name} 上传失败:`, error);
+                }
+            }
+
+            progressEl.style.display = 'none';
+            alert('文件上传完成');
+            
+            // 如果当前在文件管理页面，刷新列表
+            if (document.getElementById('files').classList.contains('active')) {
+                loadAdminFiles();
+            }
+        }
+
+        // 修改密码
+        function setupPasswordForm() {
+            document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    alert('新密码和确认密码不匹配');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    alert('新密码至少需要6位字符');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/change-password', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            currentPassword,
+                            newPassword
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('密码修改成功，请重新登录');
+                        logout();
+                    } else {
+                        alert(result.message || '密码修改失败');
+                    }
+                } catch (error) {
+                    console.error('修改密码失败:', error);
+                    alert('修改密码失败，请重试');
+                }
+            });
+        }
+
+        // 退出登录
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => {
+                    window.location.href = '/login.html';
+                })
+                .catch(() => {
+                    window.location.href = '/login.html';
+                });
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 检查登录状态
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                if (!response.ok) {
+                    window.location.href = '/login.html';
+                    return;
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+                // 在开发环境下不重定向
+                if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    window.location.href = '/login.html';
+                }
+            }
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            checkAuth();
+            setupFileUpload();
+            setupPasswordForm();
+            loadDashboardStats();
+        });
+    </script>
 </body>
 </html>

@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - NoahBox</title>
+    <link rel="stylesheet" href="modern-theme.css">
+    <style>
+        .admin-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: calc(100vh - 80px);
+            gap: 0;
+        }
+
+        .admin-sidebar {
+            background: var(--bg-primary);
+            border-right: 1px solid var(--border);
+            padding: 24px 0;
+            position: sticky;
+            top: 80px;
+            height: calc(100vh - 80px);
+            overflow-y: auto;
+        }
+
+        .admin-content {
+            background: var(--bg-secondary);
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            margin-bottom: 32px;
+            padding: 0 24px;
+        }
+
+        .sidebar-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .sidebar-link:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .sidebar-link.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: white;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .sidebar-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        .content-header {
+            margin-bottom: 32px;
+        }
+
+        .content-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .content-description {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+        }
+
+        .metric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .metric-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .metric-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--bg-tertiary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .metric-change {
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .metric-change.positive {
+            color: var(--success);
+        }
+
+        .metric-change.negative {
+            color: var(--error);
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            background: var(--bg-primary);
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .upload-zone:hover,
+        .upload-zone.dragover {
+            border-color: var(--primary);
+            background: var(--bg-tertiary);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .file-table {
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            background: var(--bg-tertiary);
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .table-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-light);
+            transition: all 0.2s;
+        }
+
+        .table-row:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .file-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .file-size {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .file-date {
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .action-btn.danger:hover {
+            background: var(--error);
+        }
+
+        .settings-form {
+            max-width: 500px;
+        }
+
+        .form-section {
+            margin-bottom: 32px;
+        }
+
+        .form-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-tertiary);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 16px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 1024px) {
+            .admin-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .admin-sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            
+            .sidebar-section {
+                padding: 0 16px;
+            }
+            
+            .sidebar-menu {
+                display: flex;
+                gap: 8px;
+                overflow-x: auto;
+                padding-bottom: 8px;
+            }
+            
+            .sidebar-menu li {
+                margin-bottom: 0;
+                flex-shrink: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">NoahBox 管理后台</a>
+                <nav class="nav">
+                    <a href="/" class="nav-link">返回首页</a>
+                    <button class="theme-toggle" onclick="toggleTheme()">🌓</button>
+                    <button class="btn btn-secondary btn-sm" onclick="logout()">退出登录</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">主要功能</div>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="#dashboard" class="sidebar-link active" onclick="showSection('dashboard')">
+                            <span class="sidebar-icon">📊</span>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#files" class="sidebar-link" onclick="showSection('files')">
+                            <span class="sidebar-icon">📁</span>
+                            <span>文件管理</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#upload" class="sidebar-link" onclick="showSection('upload')">
+                            <span class="sidebar-icon">⬆️</span>
+                            <span>文件上传</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">系统管理</div>
+                <ul class="sidebar-menu">
+                    <li>
+                        <a href="#settings" class="sidebar-link" onclick="showSection('settings')">
+                            <span class="sidebar-icon">⚙️</span>
+                            <span>系统设置</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#logs" class="sidebar-link" onclick="showSection('logs')">
+                            <span class="sidebar-icon">📋</span>
+                            <span>系统日志</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <main class="admin-content">
+            <!-- 仪表盘 -->
+            <section id="dashboard" class="content-section active">
+                <div class="content-header">
+                    <h1 class="content-title">仪表盘</h1>
+                    <p class="content-description">系统概览和关键指标</p>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-title">总文件数</div>
+                            <div class="metric-icon">📁</div>
+                        </div>
+                        <div class="metric-value" id="totalFiles">0</div>
+                        <div class="metric-change positive">+12% 较上月</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-title">存储使用</div>
+                            <div class="metric-icon">💾</div>
+                        </div>
+                        <div class="metric-value" id="storageUsed">0 MB</div>
+                        <div class="metric-change positive">+8% 较上月</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-title">今日下载</div>
+                            <div class="metric-icon">⬇️</div>
+                        </div>
+                        <div class="metric-value" id="todayDownloads">0</div>
+                        <div class="metric-change negative">-3% 较昨日</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <div class="metric-title">活跃用户</div>
+                            <div class="metric-icon">👥</div>
+                        </div>
+                        <div class="metric-value" id="activeUsers">0</div>
+                        <div class="metric-change positive">+15% 较上周</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">系统状态</h3>
+                        <p class="card-description">实时系统健康状况</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 20px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500;">系统运行</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">正常运行中</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 20px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500;">数据库</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">连接正常</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 20px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500;">存储空间</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">充足可用</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--warning); font-size: 20px;">⚠️</span>
+                            <div>
+                                <div style="font-weight: 500;">备份状态</div>
+                                <div style="font-size: 12px; color: var(--text-muted);">3天前</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文件管理 -->
+            <section id="files" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">文件管理</h1>
+                    <p class="content-description">管理和组织您的文件</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">文件列表</h3>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn btn-secondary btn-sm" onclick="loadFiles()">刷新</button>
+                            <button class="btn btn-primary btn-sm" onclick="showSection('upload')">上传文件</button>
+                        </div>
+                    </div>
+                    
+                    <div id="fileTableContainer">
+                        <div class="message">正在加载文件列表...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文件上传 -->
+            <section id="upload" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">文件上传</h1>
+                    <p class="content-description">上传新文件到系统</p>
+                </div>
+
+                <div class="card">
+                    <div class="upload-zone" id="uploadZone">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">拖拽文件到此处或点击选择</div>
+                        <div class="upload-hint">支持多文件上传，最大单文件 100MB</div>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                        <div style="margin-top: 24px;">
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                选择文件
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="uploadProgress" style="display: none;">
+                        <div style="margin-top: 24px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span>上传进度</span>
+                                <span id="progressText">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 系统设置 -->
+            <section id="settings" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">系统设置</h1>
+                    <p class="content-description">配置系统参数和安全设置</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">安全设置</h3>
+                        <p class="card-description">修改管理员密码和安全配置</p>
+                    </div>
+                    
+                    <form class="settings-form" id="passwordForm">
+                        <div class="form-section">
+                            <div class="form-group">
+                                <label class="form-label">当前密码</label>
+                                <input type="password" class="form-input" id="currentPassword" placeholder="请输入当前密码" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">新密码</label>
+                                <input type="password" class="form-input" id="newPassword" placeholder="请输入新密码（至少6位）" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">确认新密码</label>
+                                <input type="password" class="form-input" id="confirmPassword" placeholder="请再次输入新密码" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                更新密码
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 系统日志 -->
+            <section id="logs" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">系统日志</h1>
+                    <p class="content-description">查看系统操作记录和错误日志</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">最近活动</h3>
+                        <button class="btn btn-secondary btn-sm" onclick="loadLogs()">刷新日志</button>
+                    </div>
+                    
+                    <div id="logsContainer">
+                        <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📋</div>
+                            <div>暂无日志记录</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // 主题切换
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        }
+
+        // 显示指定部分
+        function showSection(sectionId) {
+            // 隐藏所有部分
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 移除所有菜单项的active类
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 显示指定部分
+            document.getElementById(sectionId).classList.add('active');
+            
+            // 添加active类到对应菜单项
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            
+            // 根据部分加载相应数据
+            if (sectionId === 'files') {
+                loadFiles();
+            } else if (sectionId === 'dashboard') {
+                loadDashboard();
+            } else if (sectionId === 'logs') {
+                loadLogs();
+            }
+        }
+
+        // 加载仪表盘数据
+        async function loadDashboard() {
+            try {
+                const response = await fetch('/api/stats');
+                if (response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalFiles').textContent = stats.totalFiles || 0;
+                    document.getElementById('storageUsed').textContent = stats.storageUsed || '0 MB';
+                    document.getElementById('todayDownloads').textContent = stats.todayDownloads || 0;
+                    document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
+                }
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+                // 显示示例数据
+                document.getElementById('totalFiles').textContent = '24';
+                document.getElementById('storageUsed').textContent = '156 MB';
+                document.getElementById('todayDownloads').textContent = '18';
+                document.getElementById('activeUsers').textContent = '5';
+            }
+        }
+
+        // 加载文件列表
+        async function loadFiles() {
+            const container = document.getElementById('fileTableContainer');
+            container.innerHTML = '<div class="message">正在加载文件列表...</div>';
+
+            try {
+                const response = await fetch('/api/admin/files');
+                if (!response.ok) throw new Error('加载失败');
+                
+                const data = await response.json();
+                const files = data.files || [];
+                
+                if (files.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📁</div>
+                            <h3>暂无文件</h3>
+                            <p>还没有上传任何文件</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="file-table">
+                        <div class="table-header">文件列表 (${files.length} 个文件)</div>
+                        ${files.map(file => `
+                            <div class="table-row">
+                                <div>
+                                    <div class="file-name">${escapeHtml(file.name)}</div>
+                                    <div class="file-size">${file.size || '未知大小'}</div>
+                                </div>
+                                <div class="file-date">${file.modified || '未知时间'}</div>
+                                <div class="file-actions">
+                                    <button class="action-btn" onclick="downloadFile('${escapeHtml(file.name)}')" title="下载">
+                                        ⬇️
+                                    </button>
+                                    <button class="action-btn danger" onclick="deleteFile('${escapeHtml(file.name)}')" title="删除">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('加载文件失败:', error);
+                container.innerHTML = '<div class="message error">加载文件列表失败</div>';
+            }
+        }
+
+        // 文件上传功能
+        function setupFileUpload() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('dragover');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('dragover');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('dragover');
+                uploadFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                uploadFiles(e.target.files);
+            });
+        }
+
+        // 上传文件
+        async function uploadFiles(files) {
+            if (files.length === 0) return;
+
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressContainer.style.display = 'block';
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch('/api/admin/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const progress = Math.round(((i + 1) / files.length) * 100);
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
+
+                    if (!response.ok) {
+                        console.error(`文件 ${file.name} 上传失败`);
+                    }
+                } catch (error) {
+                    console.error(`文件 ${file.name} 上传失败:`, error);
+                }
+            }
+
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
+                
+                // 显示成功消息
+                const message = document.createElement('div');
+                message.className = 'message success';
+                message.textContent = '文件上传完成！';
+                document.getElementById('upload').appendChild(message);
+                
+                setTimeout(() => message.remove(), 3000);
+                
+                // 如果在文件管理页面，刷新列表
+                if (document.getElementById('files').classList.contains('active')) {
+                    loadFiles();
+                }
+            }, 500);
+        }
+
+        // 下载文件
+        function downloadFile(filename) {
+            const link = document.createElement('a');
+            link.href = `/api/download/${encodeURIComponent(filename)}`;
+            link.download = filename;
+            link.click();
+        }
+
+        // 删除文件
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    loadFiles();
+                    
+                    const message = document.createElement('div');
+                    message.className = 'message success';
+                    message.textContent = '文件删除成功！';
+                    document.getElementById('files').appendChild(message);
+                    setTimeout(() => message.remove(), 3000);
+                } else {
+                    throw new Error('删除失败');
+                }
+            } catch (error) {
+                const message = document.createElement('div');
+                message.className = 'message error';
+                message.textContent = '文件删除失败！';
+                document.getElementById('files').appendChild(message);
+                setTimeout(() => message.remove(), 3000);
+            }
+        }
+
+        // 修改密码
+        function setupPasswordForm() {
+            document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    showMessage('新密码和确认密码不匹配', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    showMessage('新密码至少需要6位字符', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ currentPassword, newPassword })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showMessage('密码修改成功，请重新登录', 'success');
+                        setTimeout(() => logout(), 2000);
+                    } else {
+                        showMessage(result.message || '密码修改失败', 'error');
+                    }
+                } catch (error) {
+                    showMessage('修改密码失败，请重试', 'error');
+                }
+            });
+        }
+
+        // 显示消息
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            document.getElementById('settings').appendChild(message);
+            setTimeout(() => message.remove(), 3000);
+        }
+
+        // 加载日志
+        function loadLogs() {
+            const container = document.getElementById('logsContainer');
+            // 这里可以实现真实的日志加载逻辑
+            container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <h3>暂无日志记录</h3>
+                    <p>系统日志功能正在开发中</p>
+                </div>
+            `;
+        }
+
+        // 退出登录
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => window.location.href = '/login.html')
+                .catch(() => window.location.href = '/login.html');
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 检查登录状态
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                if (!response.ok && location.hostname !== 'localhost') {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            checkAuth();
+            setupFileUpload();
+            setupPasswordForm();
+            loadDashboard();
+        });
+    </script>
+</body>
+</html>

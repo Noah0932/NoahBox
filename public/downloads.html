@@ -1,20 +1,292 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-theme="dark">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Noah Box - 下载中心</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="/code-theme.css" rel="stylesheet">
-    <link href="/downloads-styles.css" rel="stylesheet">
+    <title>下载中心 - Noah Box</title>
+    <link rel="stylesheet" href="code-editor-theme.css">
 </head>
 <body>
-    <div id="root"></div>
-    <script src="/code-particles.js"></script>
-    <script src="/downloads-bundle.js"></script>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">Noah Box</a>
+                <nav class="nav">
+                    <a href="/" class="nav-button">
+                        🏠 home
+                    </a>
+                    <a href="/admin-code.html" class="nav-button">
+                        ⚙️ admin
+                    </a>
+                    <button class="nav-button" onclick="toggleTheme()">
+                        🌓 theme
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="search-section">
+            <div class="container">
+                <div style="text-align: center; margin-bottom: 32px;">
+                    <h1 class="code-title" style="font-size: 28px; margin-bottom: 12px;">
+                        <span class="code-comment">// </span>
+                        <span class="code-function">downloadResource</span>
+                        <span class="code-operator">()</span>
+                    </h1>
+                    <p style="color: var(--text-secondary); font-size: 14px;">
+                        快速查找和下载您需要的资源文件
+                    </p>
+                </div>
+                
+                <div class="search-container">
+                    <span class="search-icon">🔍</span>
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        placeholder="// 搜索文件名或类型..." 
+                        id="searchInput"
+                        onkeyup="searchFiles()"
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="container">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">let found =</div>
+                        <div class="stat-value" id="foundCount">0</div>
+                        <div class="stat-description">// 找到资源</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">let total =</div>
+                        <div class="stat-value" id="totalCount">0</div>
+                        <div class="stat-description">// 总计资源</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="files-section">
+            <div class="container">
+                <div id="loadingMessage" class="message" style="text-align: center; display: none;">
+                    <span class="loading"></span> 正在加载资源列表...
+                </div>
+
+                <div id="errorMessage" class="message error" style="display: none;"></div>
+
+                <div id="fileGrid" class="file-grid"></div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        let allFiles = [];
+        let filteredFiles = [];
+
+        function toggleTheme() {
+            console.log('Theme toggle clicked');
+        }
+
+        async function loadFiles() {
+            const loadingEl = document.getElementById('loadingMessage');
+            const errorEl = document.getElementById('errorMessage');
+            const fileGridEl = document.getElementById('fileGrid');
+
+            loadingEl.style.display = 'block';
+            errorEl.style.display = 'none';
+            fileGridEl.innerHTML = '';
+
+            try {
+                const response = await fetch('/api/files');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                allFiles = data.files || [];
+                filteredFiles = [...allFiles];
+                
+                loadingEl.style.display = 'none';
+                renderFiles();
+                updateStats();
+            } catch (error) {
+                console.error('加载文件失败:', error);
+                loadingEl.style.display = 'none';
+                errorEl.textContent = `// Error: ${error.message}`;
+                errorEl.style.display = 'block';
+                
+                showExampleFiles();
+            }
+        }
+
+        function showExampleFiles() {
+            allFiles = [
+                {
+                    name: 'README.md',
+                    size: '2.5 KB',
+                    modified: '2024-01-15',
+                    type: 'Markdown'
+                },
+                {
+                    name: 'config.json',
+                    size: '1.2 KB',
+                    modified: '2024-01-14',
+                    type: 'JSON'
+                },
+                {
+                    name: 'app.js',
+                    size: '15.8 KB',
+                    modified: '2024-01-13',
+                    type: 'JavaScript'
+                },
+                {
+                    name: 'style.css',
+                    size: '8.4 KB',
+                    modified: '2024-01-12',
+                    type: 'CSS'
+                },
+                {
+                    name: 'index.html',
+                    size: '3.2 KB',
+                    modified: '2024-01-11',
+                    type: 'HTML'
+                },
+                {
+                    name: 'package.json',
+                    size: '1.1 KB',
+                    modified: '2024-01-10',
+                    type: 'JSON'
+                },
+                {
+                    name: 'screenshot.png',
+                    size: '245 KB',
+                    modified: '2024-01-09',
+                    type: 'Image'
+                },
+                {
+                    name: 'demo.mp4',
+                    size: '12.5 MB',
+                    modified: '2024-01-08',
+                    type: 'Video'
+                }
+            ];
+            filteredFiles = [...allFiles];
+            renderFiles();
+            updateStats();
+        }
+
+        function renderFiles() {
+            const fileGridEl = document.getElementById('fileGrid');
+            
+            if (filteredFiles.length === 0) {
+                fileGridEl.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <h3>// 暂无资源</h3>
+                        <p>没有找到匹配的文件，请尝试其他搜索关键词</p>
+                    </div>
+                `;
+                return;
+            }
+
+            fileGridEl.innerHTML = filteredFiles.map(file => {
+                const fileIcon = getFileIcon(file.name, file.type);
+                return `
+                    <div class="file-card">
+                        <div class="file-header">
+                            <div class="file-icon">${fileIcon}</div>
+                            <div>
+                                <div class="file-name">${escapeHtml(file.name)}</div>
+                                <div class="file-meta">
+                                    ${file.size || 'unknown'} • ${file.type || 'file'}
+                                </div>
+                            </div>
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 11px; margin-bottom: 16px; font-family: 'JetBrains Mono', monospace;">
+                            // modified: ${file.modified || 'unknown'}
+                        </div>
+                        <div class="file-actions">
+                            <button class="btn btn-primary" onclick="downloadFile('${escapeHtml(file.name)}')">
+                                ⬇️ download
+                            </button>
+                            <button class="btn btn-secondary" onclick="previewFile('${escapeHtml(file.name)}')">
+                                👁️ preview
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getFileIcon(filename, type) {
+            const ext = filename.split('.').pop().toLowerCase();
+            
+            if (['js', 'jsx', 'ts', 'tsx'].includes(ext)) return '📜';
+            if (['html', 'htm'].includes(ext)) return '🌐';
+            if (['css', 'scss', 'sass', 'less'].includes(ext)) return '🎨';
+            if (['json', 'xml', 'yaml', 'yml'].includes(ext)) return '⚙️';
+            if (['md', 'txt', 'log'].includes(ext)) return '📄';
+            if (['jpg', 'jpeg', 'png', 'gif', 'svg'].includes(ext)) return '🖼️';
+            if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return '🎬';
+            if (['mp3', 'wav', 'flac'].includes(ext)) return '🎵';
+            if (['zip', 'rar', '7z', 'tar'].includes(ext)) return '📦';
+            if (['pdf'].includes(ext)) return '📋';
+            if (['doc', 'docx'].includes(ext)) return '📝';
+            if (['xls', 'xlsx'].includes(ext)) return '📊';
+            if (['sh', 'bat', 'cmd'].includes(ext)) return '⚡';
+            
+            return '📄';
+        }
+
+        function searchFiles() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                filteredFiles = [...allFiles];
+            } else {
+                filteredFiles = allFiles.filter(file => 
+                    file.name.toLowerCase().includes(searchTerm) ||
+                    (file.type && file.type.toLowerCase().includes(searchTerm))
+                );
+            }
+            
+            renderFiles();
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('foundCount').textContent = filteredFiles.length;
+            document.getElementById('totalCount').textContent = allFiles.length;
+        }
+
+        function downloadFile(filename) {
+            const downloadUrl = `/api/download/${encodeURIComponent(filename)}`;
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function previewFile(filename) {
+            const previewUrl = `/api/preview/${encodeURIComponent(filename)}`;
+            window.open(previewUrl, '_blank');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFiles();
+        });
+    </script>
 </body>
 </html>

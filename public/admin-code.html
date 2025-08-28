@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - Noah Box</title>
+    <link rel="stylesheet" href="code-editor-theme.css">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">Noah Box</a>
+                <nav class="nav">
+                    <a href="/" class="nav-button">
+                        🏠 home
+                    </a>
+                    <a href="/downloads.html" class="nav-button">
+                        📁 downloads
+                    </a>
+                    <button class="nav-button" onclick="toggleTheme()">
+                        🌓 theme
+                    </button>
+                    <button class="nav-button" onclick="logout()">
+                        🚪 logout
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">// 管理面板</div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#dashboard" class="sidebar-link active" onclick="showSection('dashboard')">
+                        <span class="sidebar-icon">📊</span>
+                        <span>仪表板</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#files" class="sidebar-link" onclick="showSection('files')">
+                        <span class="sidebar-icon">📁</span>
+                        <span>文件管理</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#upload" class="sidebar-link" onclick="showSection('upload')">
+                        <span class="sidebar-icon">⬆️</span>
+                        <span>文件上传</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#settings" class="sidebar-link" onclick="showSection('settings')">
+                        <span class="sidebar-icon">⚙️</span>
+                        <span>系统设置</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="admin-content">
+            <!-- 仪表板 -->
+            <section id="dashboard" class="content-section active">
+                <div class="content-header">
+                    <h1 class="content-title">// 仪表板</h1>
+                    <p class="content-description">系统概览和关键指标</p>
+                </div>
+
+                <div class="stats-grid" style="margin-bottom: 32px;">
+                    <div class="stat-card">
+                        <div class="stat-label">const totalFiles =</div>
+                        <div class="stat-value" id="totalFiles">0</div>
+                        <div class="stat-description">// 总文件数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">const storageUsed =</div>
+                        <div class="stat-value" id="storageUsed">0</div>
+                        <div class="stat-description">// 存储使用</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">const todayDownloads =</div>
+                        <div class="stat-value" id="todayDownloads">0</div>
+                        <div class="stat-description">// 今日下载</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">const activeUsers =</div>
+                        <div class="stat-value" id="activeUsers">0</div>
+                        <div class="stat-description">// 活跃用户</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">// 系统状态</h3>
+                        <p class="card-description">实时系统健康状况监控</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 16px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-primary);">系统运行</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">// status: online</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 16px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-primary);">数据库</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">// connection: ok</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--success); font-size: 16px;">✅</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-primary);">存储空间</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">// space: available</div>
+                            </div>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span style="color: var(--warning); font-size: 16px;">⚠️</span>
+                            <div>
+                                <div style="font-weight: 500; color: var(--text-primary);">备份状态</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">// last: 3 days ago</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文件管理 -->
+            <section id="files" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">// 文件管理</h1>
+                    <p class="content-description">管理和组织您的文件资源</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">// 文件列表</h3>
+                        <div style="display: flex; gap: 12px;">
+                            <button class="btn btn-secondary" onclick="loadFiles()">🔄 refresh</button>
+                            <button class="btn btn-primary" onclick="showSection('upload')">⬆️ upload</button>
+                        </div>
+                    </div>
+                    
+                    <div id="fileTableContainer">
+                        <div class="message">正在加载文件列表...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 文件上传 -->
+            <section id="upload" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">// 文件上传</h1>
+                    <p class="content-description">上传新文件到系统</p>
+                </div>
+
+                <div class="card">
+                    <div style="border: 2px dashed var(--border); border-radius: 4px; padding: 48px 24px; text-align: center; background: var(--bg-tertiary); transition: all 0.3s; cursor: pointer;" id="uploadZone">
+                        <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;">📁</div>
+                        <div style="font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">
+                            拖拽文件到此处或点击选择
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 24px;">
+                            // 支持多文件上传，最大单文件 100MB
+                        </div>
+                        <input type="file" id="fileInput" multiple style="display: none;">
+                        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                            📂 selectFiles()
+                        </button>
+                    </div>
+                    
+                    <div id="uploadProgress" style="display: none; margin-top: 24px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">// 上传进度</span>
+                            <span id="progressText" style="font-family: 'JetBrains Mono', monospace; font-size: 13px;">0%</span>
+                        </div>
+                        <div style="width: 100%; height: 6px; background: var(--bg-tertiary); border-radius: 3px; overflow: hidden;">
+                            <div id="progressFill" style="height: 100%; background: linear-gradient(90deg, var(--code-keyword), var(--code-string)); border-radius: 3px; transition: width 0.3s ease; width: 0%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 系统设置 -->
+            <section id="settings" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">// 系统设置</h1>
+                    <p class="content-description">配置系统参数和安全设置</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">// 安全设置</h3>
+                        <p class="card-description">修改管理员密码和安全配置</p>
+                    </div>
+                    
+                    <form id="passwordForm" style="max-width: 400px;">
+                        <div class="form-group">
+                            <label class="form-label">// 当前密码</label>
+                            <input type="password" class="form-input" id="currentPassword" placeholder="请输入当前密码" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">// 新密码</label>
+                            <input type="password" class="form-input" id="newPassword" placeholder="请输入新密码（至少6位）" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">// 确认新密码</label>
+                            <input type="password" class="form-input" id="confirmPassword" placeholder="请再次输入新密码" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            🔐 updatePassword()
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            console.log('Theme toggle clicked');
+        }
+
+        function showSection(sectionId) {
+            // 隐藏所有部分
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // 移除所有菜单项的active类
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 显示指定部分
+            document.getElementById(sectionId).classList.add('active');
+            
+            // 添加active类到对应菜单项
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+            
+            // 根据部分加载相应数据
+            if (sectionId === 'files') {
+                loadFiles();
+            } else if (sectionId === 'dashboard') {
+                loadDashboard();
+            }
+        }
+
+        function loadDashboard() {
+            // 模拟数据
+            document.getElementById('totalFiles').textContent = '24';
+            document.getElementById('storageUsed').textContent = '156MB';
+            document.getElementById('todayDownloads').textContent = '18';
+            document.getElementById('activeUsers').textContent = '5';
+        }
+
+        function loadFiles() {
+            const container = document.getElementById('fileTableContainer');
+            container.innerHTML = '<div class="message">正在加载文件列表...</div>';
+
+            // 模拟文件列表
+            setTimeout(() => {
+                const files = [
+                    { name: 'README.md', size: '2.5 KB', modified: '2024-01-15' },
+                    { name: 'config.json', size: '1.2 KB', modified: '2024-01-14' },
+                    { name: 'app.js', size: '15.8 KB', modified: '2024-01-13' },
+                    { name: 'style.css', size: '8.4 KB', modified: '2024-01-12' }
+                ];
+
+                container.innerHTML = `
+                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+                        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-primary);">
+                            // 文件列表 (${files.length} 个文件)
+                        </div>
+                        ${files.map(file => `
+                            <div style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: all 0.2s;">
+                                <div>
+                                    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(file.name)}</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${file.size} • ${file.modified}</div>
+                                </div>
+                                <div style="display: flex; gap: 8px;">
+                                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="downloadFile('${escapeHtml(file.name)}')" title="下载">
+                                        ⬇️
+                                    </button>
+                                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--error);" onclick="deleteFile('${escapeHtml(file.name)}')" title="删除">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }, 1000);
+        }
+
+        function setupFileUpload() {
+            const uploadZone = document.getElementById('uploadZone');
+            const fileInput = document.getElementById('fileInput');
+
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.style.borderColor = 'var(--code-keyword)';
+                uploadZone.style.background = 'var(--bg-primary)';
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.style.borderColor = 'var(--border)';
+                uploadZone.style.background = 'var(--bg-tertiary)';
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.style.borderColor = 'var(--border)';
+                uploadZone.style.background = 'var(--bg-tertiary)';
+                uploadFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                uploadFiles(e.target.files);
+            });
+        }
+
+        function uploadFiles(files) {
+            if (files.length === 0) return;
+
+            const progressContainer = document.getElementById('uploadProgress');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            progressContainer.style.display = 'block';
+
+            // 模拟上传进度
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    setTimeout(() => {
+                        progressContainer.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        progressText.textContent = '0%';
+                        
+                        showMessage('文件上传完成！', 'success');
+                        
+                        if (document.getElementById('files').classList.contains('active')) {
+                            loadFiles();
+                        }
+                    }, 1000);
+                }
+                
+                progressFill.style.width = progress + '%';
+                progressText.textContent = Math.round(progress) + '%';
+            }, 200);
+        }
+
+        function downloadFile(filename) {
+            const link = document.createElement('a');
+            link.href = `/api/download/${encodeURIComponent(filename)}`;
+            link.download = filename;
+            link.click();
+        }
+
+        function deleteFile(filename) {
+            if (!confirm(`确定要删除文件 "${filename}" 吗？`)) return;
+            
+            showMessage('文件删除成功！', 'success');
+            loadFiles();
+        }
+
+        function setupPasswordForm() {
+            document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+
+                if (newPassword !== confirmPassword) {
+                    showMessage('新密码和确认密码不匹配', 'error');
+                    return;
+                }
+
+                if (newPassword.length < 6) {
+                    showMessage('新密码至少需要6位字符', 'error');
+                    return;
+                }
+
+                try {
+                    const response = await fetch('/api/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ currentPassword, newPassword })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        showMessage('密码修改成功，请重新登录', 'success');
+                        setTimeout(() => logout(), 2000);
+                    } else {
+                        showMessage(result.message || '密码修改失败', 'error');
+                    }
+                } catch (error) {
+                    showMessage('修改密码失败，请重试', 'error');
+                }
+            });
+        }
+
+        function showMessage(text, type = 'success') {
+            const message = document.createElement('div');
+            message.className = `message ${type}`;
+            message.textContent = `// ${text}`;
+            document.getElementById('settings').appendChild(message);
+            setTimeout(() => message.remove(), 3000);
+        }
+
+        function logout() {
+            fetch('/api/logout', { method: 'POST' })
+                .then(() => window.location.href = '/login.html')
+                .catch(() => window.location.href = '/login.html');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function checkAuth() {
+            try {
+                const response = await fetch('/api/check-auth');
+                if (!response.ok && location.hostname !== 'localhost') {
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('检查登录状态失败:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkAuth();
+            setupFileUpload();
+            setupPasswordForm();
+            loadDashboard();
+        });
+    </script>
+</body>
+</html>
