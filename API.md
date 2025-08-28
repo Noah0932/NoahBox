@@ -72,6 +72,38 @@ X-Session-ID: abc123def456
 }
 ```
 
+### 修改密码 🔒
+
+修改管理员密码（需要管理员权限）。
+
+**请求**
+```http
+POST /api/change-password
+X-Session-ID: abc123def456
+Content-Type: application/json
+
+{
+  "currentPassword": "admin123",
+  "newPassword": "new-secure-password"
+}
+```
+
+**响应**
+```json
+{
+  "success": true,
+  "message": "密码修改成功，请重新登录"
+}
+```
+
+**错误响应**
+```json
+{
+  "success": false,
+  "message": "当前密码错误"
+}
+```
+
 ## 📁 文件管理
 
 ### 获取文件列表

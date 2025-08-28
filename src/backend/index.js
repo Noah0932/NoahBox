@@ -132,6 +132,23 @@ app.post('/api/logout', async (c) => {
   return c.json({ success: true });
 });
 
+// 身份验证中间件
+const requireAuth = async (c, next) => {
+  const sessionId = c.req.header('X-Session-ID');
+  
+  if (!sessionId || !sessions.has(sessionId)) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+  
+  const session = sessions.get(sessionId);
+  if (Date.now() - session.loginTime > 24 * 60 * 60 * 1000) {
+    sessions.delete(sessionId);
+    return c.json({ error: 'Session expired' }, 401);
+  }
+  
+  await next();
+};
+
 // 修改密码
 app.post('/api/change-password', requireAuth, async (c) => {
   const { currentPassword, newPassword } = await c.req.json();
@@ -149,23 +166,6 @@ app.post('/api/change-password', requireAuth, async (c) => {
   // 为了演示，我们只是返回成功
   return c.json({ success: true, message: '密码修改成功，请重新登录' });
 });
-
-// 身份验证中间件
-const requireAuth = async (c, next) => {
-  const sessionId = c.req.header('X-Session-ID');
-  
-  if (!sessionId || !sessions.has(sessionId)) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  
-  const session = sessions.get(sessionId);
-  if (Date.now() - session.loginTime > 24 * 60 * 60 * 1000) {
-    sessions.delete(sessionId);
-    return c.json({ error: 'Session expired' }, 401);
-  }
-  
-  await next();
-};
 
 // API路由
 app.route('/api', api());
