@@ -23552,88 +23552,106 @@
     }
   });
 
-  // src/frontend/downloads.jsx
+  // src/frontend/downloads-tech.jsx
   var import_react = __toESM(require_react());
   var import_client = __toESM(require_client());
   function DownloadsPage() {
     const [files, setFiles] = (0, import_react.useState)([]);
-    const [categories, setCategories] = (0, import_react.useState)([]);
-    const [selectedCategory, setSelectedCategory] = (0, import_react.useState)("all");
-    const [searchTerm, setSearchTerm] = (0, import_react.useState)("");
     const [loading, setLoading] = (0, import_react.useState)(true);
+    const [searchTerm, setSearchTerm] = (0, import_react.useState)("");
+    const [selectedCategory, setSelectedCategory] = (0, import_react.useState)("all");
+    const [categories, setCategories] = (0, import_react.useState)([]);
     (0, import_react.useEffect)(() => {
-      fetchData();
+      fetchFiles();
     }, []);
-    const fetchData = async () => {
+    const fetchFiles = async () => {
       try {
-        const [filesRes, categoriesRes] = await Promise.all([
-          fetch("/api/files"),
-          fetch("/api/categories")
-        ]);
-        const filesData = await filesRes.json();
-        const categoriesData = await categoriesRes.json();
-        setFiles(filesData);
-        setCategories(categoriesData);
+        setLoading(true);
+        const response = await fetch("/api/files");
+        const data = await response.json();
+        setFiles(data);
+        const uniqueCategories = [...new Set(data.map((file) => file.category).filter(Boolean))];
+        setCategories(uniqueCategories);
       } catch (error) {
-        console.error("\u83B7\u53D6\u6570\u636E\u5931\u8D25:", error);
+        console.error("\u83B7\u53D6\u6587\u4EF6\u5217\u8868\u5931\u8D25:", error);
       } finally {
         setLoading(false);
       }
     };
-    const filteredFiles = files.filter((file) => {
-      const matchesCategory = selectedCategory === "all" || file.category === selectedCategory;
-      const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) || file.description.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-    const handleDownload = async (fileId) => {
+    const handleDownload = async (fileId, url) => {
       try {
         await fetch(`/api/files/${fileId}/download`, { method: "POST" });
-        fetchData();
+        window.open(url, "_blank");
+        fetchFiles();
       } catch (error) {
         console.error("\u4E0B\u8F7D\u5931\u8D25:", error);
       }
     };
-    if (loading) {
-      return /* @__PURE__ */ import_react.default.createElement("div", { className: "container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "loading" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "spinner" }), /* @__PURE__ */ import_react.default.createElement("p", null, "\u6B63\u5728\u52A0\u8F7D\u8D44\u6E90...")));
-    }
-    return /* @__PURE__ */ import_react.default.createElement("div", { className: "container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "header" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "logo" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "logo-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-box" })), "Noah Box - \u4E0B\u8F7D\u4E2D\u5FC3"), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-links" }, /* @__PURE__ */ import_react.default.createElement("a", { href: "/", className: "nav-link" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-house" }), " \u9996\u9875"), /* @__PURE__ */ import_react.default.createElement("a", { href: "/admin.html", className: "nav-link" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-gear" }), " \u7BA1\u7406"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "search-bar" }, /* @__PURE__ */ import_react.default.createElement(
+    const filteredFiles = files.filter((file) => {
+      const matchesSearch = file.name.toLowerCase().includes(searchTerm.toLowerCase()) || file.description && file.description.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = selectedCategory === "all" || file.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+    const getFileIcon = (type, category) => {
+      if (type) {
+        if (type.includes("image"))
+          return "bi-image";
+        if (type.includes("video"))
+          return "bi-play-circle";
+        if (type.includes("audio"))
+          return "bi-music-note";
+        if (type.includes("pdf"))
+          return "bi-file-pdf";
+        if (type.includes("zip") || type.includes("rar"))
+          return "bi-file-zip";
+      }
+      switch (category?.toLowerCase()) {
+        case "software":
+          return "bi-app";
+        case "game":
+          return "bi-controller";
+        case "document":
+          return "bi-file-text";
+        case "media":
+          return "bi-camera-video";
+        default:
+          return "bi-file-earmark";
+      }
+    };
+    const formatFileSize = (bytes) => {
+      if (!bytes)
+        return "-";
+      const sizes = ["B", "KB", "MB", "GB"];
+      const i = Math.floor(Math.log(bytes) / Math.log(1024));
+      return `${(bytes / Math.pow(1024, i)).toFixed(2)} ${sizes[i]}`;
+    };
+    return /* @__PURE__ */ import_react.default.createElement("div", { className: "downloads-page" }, /* @__PURE__ */ import_react.default.createElement("nav", { className: "navbar" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "navbar-content" }, /* @__PURE__ */ import_react.default.createElement("a", { href: "/", className: "logo" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-box-seam" }), "Noah Box"), /* @__PURE__ */ import_react.default.createElement("div", { className: "nav-actions" }, /* @__PURE__ */ import_react.default.createElement("a", { href: "/", className: "btn btn-secondary" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-house" }), "\u9996\u9875"), /* @__PURE__ */ import_react.default.createElement("a", { href: "/admin.html", className: "btn btn-secondary" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-gear" }), "\u7BA1\u7406\u540E\u53F0"))))), /* @__PURE__ */ import_react.default.createElement("main", { className: "main-content" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "container" }, /* @__PURE__ */ import_react.default.createElement("section", { className: "page-header" }, /* @__PURE__ */ import_react.default.createElement("h1", null, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-download" }), "\u8D44\u6E90\u4E0B\u8F7D\u4E2D\u5FC3"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u63A2\u7D22\u7CBE\u5FC3\u7B56\u5212\u7684\u4F18\u8D28\u8D44\u6E90\uFF0C\u4EAB\u53D7\u6781\u901F\u4E0B\u8F7D\u4F53\u9A8C")), /* @__PURE__ */ import_react.default.createElement("section", { className: "search-section" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "search-controls" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "search-box" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-search" }), /* @__PURE__ */ import_react.default.createElement(
       "input",
       {
         type: "text",
-        className: "search-input",
         placeholder: "\u641C\u7D22\u8D44\u6E90...",
         value: searchTerm,
-        onChange: (e) => setSearchTerm(e.target.value)
+        onChange: (e) => setSearchTerm(e.target.value),
+        className: "search-input"
       }
-    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "categories" }, /* @__PURE__ */ import_react.default.createElement(
-      "span",
+    )), /* @__PURE__ */ import_react.default.createElement("div", { className: "category-filter" }, /* @__PURE__ */ import_react.default.createElement(
+      "select",
       {
-        className: `category-tag ${selectedCategory === "all" ? "active" : ""}`,
-        onClick: () => setSelectedCategory("all")
+        value: selectedCategory,
+        onChange: (e) => setSelectedCategory(e.target.value),
+        className: "category-select"
       },
-      "\u5168\u90E8 (",
-      files.length,
-      ")"
-    ), categories.map((category) => /* @__PURE__ */ import_react.default.createElement(
-      "span",
-      {
-        key: category,
-        className: `category-tag ${selectedCategory === category ? "active" : ""}`,
-        onClick: () => setSelectedCategory(category)
-      },
-      category,
-      " (",
-      files.filter((f) => f.category === category).length,
-      ")"
-    ))), filteredFiles.length === 0 ? /* @__PURE__ */ import_react.default.createElement("div", { className: "empty-state" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-inbox" }), /* @__PURE__ */ import_react.default.createElement("h3", null, "\u6682\u65E0\u8D44\u6E90"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u8D44\u6E90\uFF0C\u8BF7\u5C1D\u8BD5\u5176\u4ED6\u641C\u7D22\u6761\u4EF6")) : /* @__PURE__ */ import_react.default.createElement("div", { className: "files-grid" }, filteredFiles.map((file) => /* @__PURE__ */ import_react.default.createElement("div", { key: file.id, className: "file-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "file-header" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "file-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-file-earmark" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-info" }, /* @__PURE__ */ import_react.default.createElement("h3", null, file.name), /* @__PURE__ */ import_react.default.createElement("span", { className: "file-category" }, file.category))), /* @__PURE__ */ import_react.default.createElement("p", { className: "file-description" }, file.description), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-meta" }, /* @__PURE__ */ import_react.default.createElement("span", null, "\u5927\u5C0F: ", file.size || "\u672A\u77E5"), /* @__PURE__ */ import_react.default.createElement("span", null, "\u4E0B\u8F7D: ", file.downloads || 0, " \u6B21")), /* @__PURE__ */ import_react.default.createElement(
+      /* @__PURE__ */ import_react.default.createElement("option", { value: "all" }, "\u5168\u90E8\u5206\u7C7B"),
+      categories.map((category) => /* @__PURE__ */ import_react.default.createElement("option", { key: category, value: category }, category))
+    ))), /* @__PURE__ */ import_react.default.createElement("div", { className: "search-stats" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "stats-text" }, "\u627E\u5230 ", /* @__PURE__ */ import_react.default.createElement("strong", null, filteredFiles.length), " \u4E2A\u8D44\u6E90"))), /* @__PURE__ */ import_react.default.createElement("section", { className: "files-section" }, loading ? /* @__PURE__ */ import_react.default.createElement("div", { className: "loading-container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "loading" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-arrow-repeat" })), /* @__PURE__ */ import_react.default.createElement("p", null, "\u6B63\u5728\u52A0\u8F7D\u8D44\u6E90...")) : filteredFiles.length === 0 ? /* @__PURE__ */ import_react.default.createElement("div", { className: "empty-state" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "empty-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-inbox" })), /* @__PURE__ */ import_react.default.createElement("h3", null, "\u6682\u65E0\u8D44\u6E90"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u6CA1\u6709\u627E\u5230\u5339\u914D\u7684\u8D44\u6E90\uFF0C\u8BF7\u5C1D\u8BD5\u5176\u4ED6\u641C\u7D22\u6761\u4EF6")) : /* @__PURE__ */ import_react.default.createElement("div", { className: "file-grid" }, filteredFiles.map((file) => /* @__PURE__ */ import_react.default.createElement("div", { key: file.id, className: "file-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "file-header" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "file-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: getFileIcon(file.type, file.category) })), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-category" }, file.category || "uncategorized")), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-content" }, /* @__PURE__ */ import_react.default.createElement("h3", { className: "file-title" }, file.name), file.description && /* @__PURE__ */ import_react.default.createElement("p", { className: "file-description" }, file.description)), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-meta" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "meta-item" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-hdd" }), /* @__PURE__ */ import_react.default.createElement("span", null, formatFileSize(file.size))), /* @__PURE__ */ import_react.default.createElement("div", { className: "meta-item" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-download" }), /* @__PURE__ */ import_react.default.createElement("span", null, file.downloads || 0, " \u6B21"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "file-actions" }, /* @__PURE__ */ import_react.default.createElement(
       "button",
       {
-        className: "download-btn",
-        onClick: () => handleDownload(file.id)
+        className: "btn btn-primary",
+        onClick: () => handleDownload(file.id, file.url)
       },
       /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-download" }),
-      " \u7ACB\u5373\u4E0B\u8F7D"
-    )))), /* @__PURE__ */ import_react.default.createElement("div", { className: "footer" }, /* @__PURE__ */ import_react.default.createElement("p", null, "\xA9 2025 Noah Box. All rights reserved."), /* @__PURE__ */ import_react.default.createElement("p", null, /* @__PURE__ */ import_react.default.createElement("a", { href: "https://beian.miit.gov.cn/", target: "_blank", rel: "noopener" }, "\u7696ICP\u5907-2025092209\u53F7"))));
+      "\u7ACB\u5373\u4E0B\u8F7D"
+    )))))), /* @__PURE__ */ import_react.default.createElement("section", { className: "download-stats" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "grid grid-3" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "tech-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-files" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", { className: "stat-number" }, files.length), /* @__PURE__ */ import_react.default.createElement("p", { className: "stat-label" }, "\u603B\u8D44\u6E90\u6570"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "tech-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-collection" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", { className: "stat-number" }, categories.length), /* @__PURE__ */ import_react.default.createElement("p", { className: "stat-label" }, "\u8D44\u6E90\u5206\u7C7B"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "tech-card" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-icon" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-graph-up" })), /* @__PURE__ */ import_react.default.createElement("div", { className: "stat-content" }, /* @__PURE__ */ import_react.default.createElement("h3", { className: "stat-number" }, files.reduce((sum, file) => sum + (file.downloads || 0), 0)), /* @__PURE__ */ import_react.default.createElement("p", { className: "stat-label" }, "\u603B\u4E0B\u8F7D\u91CF"))))))), /* @__PURE__ */ import_react.default.createElement("footer", { className: "footer" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "container" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "footer-content" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "footer-brand" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "logo" }, /* @__PURE__ */ import_react.default.createElement("i", { className: "bi bi-box-seam" }), "Noah Box"), /* @__PURE__ */ import_react.default.createElement("p", null, "\u7CBE\u54C1\u8D44\u6E90\u4E0B\u8F7D\u5E73\u53F0")), /* @__PURE__ */ import_react.default.createElement("div", { className: "footer-info" }, /* @__PURE__ */ import_react.default.createElement("div", { className: "status-indicator status-online" }, /* @__PURE__ */ import_react.default.createElement("span", { className: "pulse" }), "\u4E0B\u8F7D\u670D\u52A1\u6B63\u5E38\u8FD0\u884C"))), /* @__PURE__ */ import_react.default.createElement("div", { className: "footer-bottom" }, /* @__PURE__ */ import_react.default.createElement("p", null, "\xA9 2024 Noah Box. \u91C7\u7528\u73B0\u4EE3\u5316\u6280\u672F\u6784\u5EFA.")))));
   }
   var container = document.getElementById("root");
   var root = (0, import_client.createRoot)(container);

@@ -36,18 +36,17 @@ function HomePage() {
     <div className="home-page">
       {/* 导航栏 */}
       <nav className="navbar">
-        <div className="nav-container">
-          <div className="nav-brand">
-            <div className="brand-icon">
-              <i className="bi bi-box"></i>
-            </div>
-            <span className="brand-text">Noah Box</span>
-          </div>
-          <div className="nav-links">
-            <a href="/downloads.html" className="nav-link">
-              <i className="bi bi-download"></i>
-              资源下载
+        <div className="container">
+          <div className="navbar-content">
+            <a href="/" className="logo">
+              <i className="bi bi-box-seam"></i>
+              Noah Box
             </a>
+            <div className="nav-links">
+              <a href="/downloads.html" className="btn btn-secondary">
+                <i className="bi bi-download"></i>
+                资源下载
+              </a>
             <a href="/admin.html" className="nav-link">
               <i className="bi bi-gear"></i>
               管理后台
