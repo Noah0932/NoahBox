@@ -7,7 +7,7 @@
     "dev": "wrangler dev",
     "build": "npm run build:home && npm run build:downloads && npm run build:admin && npm run build:backend",
     "build:all": "npm run build:home && npm run build:downloads && npm run build:admin",
-    "build:home": "esbuild src/frontend/home-tech.jsx --bundle --outfile=public/home-bundle.js",
+    "build:home": "esbuild src/frontend/home-code.jsx --bundle --outfile=public/home-bundle.js",
     "build:downloads": "esbuild src/frontend/downloads-tech.jsx --bundle --outfile=public/downloads-bundle.js",
     "build:admin": "esbuild src/frontend/admin.jsx --bundle --outfile=public/admin-bundle.js",
     "build:login": "esbuild src/frontend/login.jsx --bundle --outfile=public/login-bundle.js",

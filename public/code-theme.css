@@ -1,0 +1,525 @@
+/* 代码主题样式 - 参考 cnb.cool 设计 */
+
+:root {
+  /* 深色模式 - 代码编辑器风格 */
+  --bg-primary: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-card: rgba(30, 41, 59, 0.8);
+  --bg-glass: rgba(255, 255, 255, 0.05);
+  
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+  
+  /* 代码语法高亮色彩 */
+  --code-orange: #fb923c;
+  --code-blue: #60a5fa;
+  --code-green: #34d399;
+  --code-purple: #a78bfa;
+  --code-yellow: #fbbf24;
+  --code-red: #f87171;
+  --code-cyan: #22d3ee;
+  
+  --accent-primary: var(--code-blue);
+  --accent-secondary: var(--code-orange);
+  --accent-gradient: linear-gradient(135deg, var(--code-blue) 0%, var(--code-purple) 100%);
+  
+  --border-color: rgba(96, 165, 250, 0.2);
+  --shadow-glow: 0 0 30px rgba(96, 165, 250, 0.3);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.4);
+  
+  --transition-fast: 0.2s ease;
+  --transition-smooth: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 浅色模式 - 代码编辑器浅色主题 */
+[data-theme="light"] {
+  --bg-primary: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%);
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-glass: rgba(255, 255, 255, 0.7);
+  
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  
+  /* 浅色模式代码色彩 */
+  --code-orange: #ea580c;
+  --code-blue: #2563eb;
+  --code-green: #059669;
+  --code-purple: #7c3aed;
+  --code-yellow: #d97706;
+  --code-red: #dc2626;
+  --code-cyan: #0891b2;
+  
+  --accent-primary: var(--code-blue);
+  --accent-secondary: var(--code-orange);
+  --accent-gradient: linear-gradient(135deg, var(--code-blue) 0%, var(--code-purple) 100%);
+  
+  --border-color: rgba(37, 99, 235, 0.2);
+  --shadow-glow: 0 0 30px rgba(37, 99, 235, 0.2);
+  --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* 基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Monaco', monospace;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  transition: all var(--transition-smooth);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* 代码风格背景动画 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  z-index: -3;
+}
+
+/* 浮动代码元素 */
+.code-particles {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -2;
+  overflow: hidden;
+}
+
+.code-particle {
+  position: absolute;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 500;
+  opacity: 0.6;
+  animation: float 20s linear infinite;
+}
+
+.code-particle.orange { color: var(--code-orange); }
+.code-particle.blue { color: var(--code-blue); }
+.code-particle.green { color: var(--code-green); }
+.code-particle.purple { color: var(--code-purple); }
+.code-particle.yellow { color: var(--code-yellow); }
+.code-particle.cyan { color: var(--code-cyan); }
+
+@keyframes float {
+  0% {
+    transform: translateY(100vh) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-100px) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* 容器样式 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+/* 导航栏 */
+.navbar {
+  background: rgba(30, 41, 59, 0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: all var(--transition-smooth);
+}
+
+.navbar-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.logo::before {
+  content: '<';
+  color: var(--code-orange);
+  font-size: 1.8rem;
+}
+
+.logo::after {
+  content: '/>';
+  color: var(--code-orange);
+  font-size: 1.2rem;
+}
+
+.logo .logo-text {
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 英雄区域 */
+.hero {
+  padding: 6rem 0;
+  text-align: center;
+  position: relative;
+}
+
+.hero h1 {
+  font-size: 4rem;
+  font-weight: 900;
+  margin-bottom: 2rem;
+  font-family: 'JetBrains Mono', monospace;
+  line-height: 1.2;
+  position: relative;
+}
+
+.hero h1::before {
+  content: '// ';
+  color: var(--code-green);
+  font-size: 0.8em;
+  position: absolute;
+  left: -3rem;
+  top: 0;
+}
+
+.hero .code-highlight {
+  color: var(--code-orange);
+}
+
+.hero .variable {
+  color: var(--code-blue);
+}
+
+.hero .string {
+  color: var(--code-green);
+}
+
+.hero .keyword {
+  color: var(--code-purple);
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  margin-bottom: 3rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  font-family: 'Inter', sans-serif;
+}
+
+/* 代码风格卡片 */
+.code-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  backdrop-filter: blur(20px);
+  transition: all var(--transition-smooth);
+  position: relative;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.code-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent-gradient);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.code-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-card);
+  border-color: var(--accent-primary);
+}
+
+.code-card:hover::before {
+  opacity: 1;
+}
+
+/* 代码块样式 */
+.code-block {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  position: relative;
+}
+
+.code-block::before {
+  content: '●●●';
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  color: var(--code-orange);
+  font-size: 0.8rem;
+}
+
+/* 按钮样式 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 4px 15px rgba(96, 165, 250, 0.3);
+}
+
+.btn-primary::before {
+  content: 'execute(';
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.btn-primary::after {
+  content: ')';
+  font-size: 0.8em;
+  opacity: 0.7;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(96, 165, 250, 0.4);
+}
+
+.btn-secondary {
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  backdrop-filter: blur(10px);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card);
+  border-color: var(--accent-primary);
+  box-shadow: var(--shadow-glow);
+}
+
+/* 文件卡片 */
+.file-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  backdrop-filter: blur(20px);
+  transition: all var(--transition-smooth);
+  position: relative;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.file-card::before {
+  content: 'class File {';
+  position: absolute;
+  top: 0.5rem;
+  left: 1rem;
+  font-size: 0.7rem;
+  color: var(--code-purple);
+  opacity: 0.6;
+}
+
+.file-card::after {
+  content: '}';
+  position: absolute;
+  bottom: 0.5rem;
+  right: 1rem;
+  font-size: 0.7rem;
+  color: var(--code-purple);
+  opacity: 0.6;
+}
+
+.file-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card);
+  border-color: var(--accent-primary);
+}
+
+/* 统计数字 */
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stat-number::before {
+  content: 'const count = ';
+  font-size: 0.4em;
+  color: var(--code-blue);
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+}
+
+/* 主题切换按钮 */
+.theme-toggle {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+  backdrop-filter: blur(10px);
+}
+
+.theme-toggle::before {
+  content: 'theme = ';
+  font-size: 0.8em;
+  color: var(--code-blue);
+}
+
+.theme-toggle:hover {
+  background: var(--bg-card);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-2px);
+}
+
+/* 网格布局 */
+.grid {
+  display: grid;
+  gap: 2rem;
+  margin: 3rem 0;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .hero h1::before {
+    display: none;
+  }
+  
+  .container {
+    padding: 0 1rem;
+  }
+  
+  .code-card {
+    padding: 1.5rem;
+  }
+  
+  .grid {
+    gap: 1rem;
+  }
+}
+
+/* 加载动画 */
+.loading {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  border-top-color: var(--accent-primary);
+  animation: spin 1s ease-in-out infinite;
+}
+
+.loading::before {
+  content: 'loading...';
+  position: absolute;
+  top: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
