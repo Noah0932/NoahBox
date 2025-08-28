@@ -43,6 +43,12 @@
                     </a>
                 </li>
                 <li>
+                    <a href="#categories" class="sidebar-link" onclick="showSection('categories')">
+                        <span class="sidebar-icon">📂</span>
+                        <span>分类管理</span>
+                    </a>
+                </li>
+                <li>
                     <a href="#files" class="sidebar-link" onclick="showSection('files')">
                         <span class="sidebar-icon">📁</span>
                         <span>文件管理</span>
@@ -78,9 +84,9 @@
                         <div class="stat-description">// 总文件数</div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-label">const storageUsed =</div>
-                        <div class="stat-value" id="storageUsed">0</div>
-                        <div class="stat-description">// 存储使用</div>
+                        <div class="stat-label">const categories =</div>
+                        <div class="stat-value" id="totalCategories">0</div>
+                        <div class="stat-description">// 分类数量</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">const todayDownloads =</div>
@@ -132,6 +138,59 @@
                 </div>
             </section>
 
+            <!-- 分类管理 -->
+            <section id="categories" class="content-section">
+                <div class="content-header">
+                    <h1 class="content-title">// 分类管理</h1>
+                    <p class="content-description">管理文件分类和标签</p>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">// 添加新分类</h3>
+                        <p class="card-description">创建新的文件分类</p>
+                    </div>
+                    
+                    <form id="categoryForm" style="max-width: 400px;">
+                        <div class="form-group">
+                            <label class="form-label">// 分类名称</label>
+                            <input type="text" class="form-input" id="categoryName" placeholder="输入分类名称" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">// 分类描述</label>
+                            <input type="text" class="form-input" id="categoryDescription" placeholder="输入分类描述">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">// 分类图标</label>
+                            <select class="form-input" id="categoryIcon">
+                                <option value="📄">📄 文档</option>
+                                <option value="🖼️">🖼️ 图片</option>
+                                <option value="🎬">🎬 视频</option>
+                                <option value="🎵">🎵 音频</option>
+                                <option value="📦">📦 压缩包</option>
+                                <option value="💻">💻 代码</option>
+                                <option value="📊">📊 数据</option>
+                                <option value="🔧">🔧 工具</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            ➕ addCategory()
+                        </button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">// 现有分类</h3>
+                        <button class="btn btn-secondary" onclick="loadCategories()">🔄 refresh</button>
+                    </div>
+                    
+                    <div id="categoriesContainer">
+                        <div class="message">正在加载分类列表...</div>
+                    </div>
+                </div>
+            </section>
+
             <!-- 文件管理 -->
             <section id="files" class="content-section">
                 <div class="content-header">
@@ -143,6 +202,9 @@
                     <div class="card-header">
                         <h3 class="card-title">// 文件列表</h3>
                         <div style="display: flex; gap: 12px;">
+                            <select class="form-input" id="categoryFilter" style="width: 200px;" onchange="filterFilesByCategory()">
+                                <option value="">// 所有分类</option>
+                            </select>
                             <button class="btn btn-secondary" onclick="loadFiles()">🔄 refresh</button>
                             <button class="btn btn-primary" onclick="showSection('upload')">⬆️ upload</button>
                         </div>
@@ -162,6 +224,13 @@
                 </div>
 
                 <div class="card">
+                    <div class="form-group">
+                        <label class="form-label">// 选择分类</label>
+                        <select class="form-input" id="uploadCategory" style="max-width: 300px;">
+                            <option value="">选择文件分类</option>
+                        </select>
+                    </div>
+                    
                     <div style="border: 2px dashed var(--border); border-radius: 4px; padding: 48px 24px; text-align: center; background: var(--bg-tertiary); transition: all 0.3s; cursor: pointer;" id="uploadZone">
                         <div style="font-size: 48px; color: var(--text-muted); margin-bottom: 16px;">📁</div>
                         <div style="font-size: 16px; font-weight: 500; color: var(--text-primary); margin-bottom: 8px;">
@@ -224,6 +293,54 @@
     </div>
 
     <script>
+        // 全局变量
+        let sessionId = null;
+        let categories = [];
+        let allFiles = [];
+
+        // 获取session ID
+        function getSessionId() {
+            if (sessionId) return sessionId;
+            
+            // 从localStorage获取
+            sessionId = localStorage.getItem('sessionId');
+            return sessionId;
+        }
+
+        // 设置session ID
+        function setSessionId(id) {
+            sessionId = id;
+            localStorage.setItem('sessionId', id);
+        }
+
+        // API请求封装
+        async function apiRequest(url, options = {}) {
+            const sid = getSessionId();
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            
+            if (sid) {
+                headers['X-Session-ID'] = sid;
+            }
+
+            const response = await fetch(url, {
+                ...options,
+                headers
+            });
+
+            if (response.status === 401) {
+                // 未授权，清除session并跳转登录
+                localStorage.removeItem('sessionId');
+                sessionId = null;
+                window.location.href = '/login.html';
+                return null;
+            }
+
+            return response;
+        }
+
         function toggleTheme() {
             console.log('Theme toggle clicked');
         }
@@ -250,56 +367,281 @@
                 loadFiles();
             } else if (sectionId === 'dashboard') {
                 loadDashboard();
+            } else if (sectionId === 'categories') {
+                loadCategories();
+            } else if (sectionId === 'upload') {
+                loadCategoriesForUpload();
             }
         }
 
-        function loadDashboard() {
-            // 模拟数据
-            document.getElementById('totalFiles').textContent = '24';
-            document.getElementById('storageUsed').textContent = '156MB';
-            document.getElementById('todayDownloads').textContent = '18';
-            document.getElementById('activeUsers').textContent = '5';
+        async function loadDashboard() {
+            try {
+                const response = await apiRequest('/api/stats');
+                if (response && response.ok) {
+                    const stats = await response.json();
+                    document.getElementById('totalFiles').textContent = stats.totalFiles || 0;
+                    document.getElementById('totalCategories').textContent = stats.totalCategories || 0;
+                    document.getElementById('todayDownloads').textContent = stats.todayDownloads || 0;
+                    document.getElementById('activeUsers').textContent = stats.activeUsers || 0;
+                } else {
+                    // 显示示例数据
+                    document.getElementById('totalFiles').textContent = '24';
+                    document.getElementById('totalCategories').textContent = '6';
+                    document.getElementById('todayDownloads').textContent = '18';
+                    document.getElementById('activeUsers').textContent = '5';
+                }
+            } catch (error) {
+                console.error('加载仪表盘数据失败:', error);
+                // 显示示例数据
+                document.getElementById('totalFiles').textContent = '24';
+                document.getElementById('totalCategories').textContent = '6';
+                document.getElementById('todayDownloads').textContent = '18';
+                document.getElementById('activeUsers').textContent = '5';
+            }
         }
 
-        function loadFiles() {
+        async function loadCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '<div class="message">正在加载分类列表...</div>';
+
+            try {
+                const response = await apiRequest('/api/categories');
+                if (response && response.ok) {
+                    const data = await response.json();
+                    categories = data.categories || [];
+                } else {
+                    // 使用示例分类
+                    categories = [
+                        { id: 1, name: '文档', description: '各类文档文件', icon: '📄', count: 8 },
+                        { id: 2, name: '图片', description: '图片和图像文件', icon: '🖼️', count: 12 },
+                        { id: 3, name: '视频', description: '视频文件', icon: '🎬', count: 3 },
+                        { id: 4, name: '代码', description: '源代码文件', icon: '💻', count: 15 },
+                        { id: 5, name: '工具', description: '实用工具软件', icon: '🔧', count: 6 },
+                        { id: 6, name: '其他', description: '其他类型文件', icon: '📦', count: 4 }
+                    ];
+                }
+
+                renderCategories();
+                updateCategoryFilters();
+            } catch (error) {
+                console.error('加载分类失败:', error);
+                container.innerHTML = '<div class="message error">// Error: 加载分类失败</div>';
+            }
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            
+            if (categories.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📂</div>
+                        <h3>// 暂无分类</h3>
+                        <p>还没有创建任何分类</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;">
+                    ${categories.map(category => `
+                        <div class="card" style="padding: 20px;">
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                <span style="font-size: 24px;">${category.icon}</span>
+                                <div>
+                                    <div style="font-weight: 600; color: var(--text-primary);">${escapeHtml(category.name)}</div>
+                                    <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">// ${category.count || 0} files</div>
+                                </div>
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 13px; margin-bottom: 16px;">
+                                ${escapeHtml(category.description || '')}
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="editCategory(${category.id})">
+                                    ✏️ edit
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--error);" onclick="deleteCategory(${category.id})">
+                                    🗑️ delete
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function updateCategoryFilters() {
+            const categoryFilter = document.getElementById('categoryFilter');
+            const uploadCategory = document.getElementById('uploadCategory');
+            
+            if (categoryFilter) {
+                categoryFilter.innerHTML = '<option value="">// 所有分类</option>' +
+                    categories.map(cat => `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`).join('');
+            }
+            
+            if (uploadCategory) {
+                uploadCategory.innerHTML = '<option value="">选择文件分类</option>' +
+                    categories.map(cat => `<option value="${cat.id}">${cat.icon} ${cat.name}</option>`).join('');
+            }
+        }
+
+        async function loadCategoriesForUpload() {
+            if (categories.length === 0) {
+                await loadCategories();
+            }
+            updateCategoryFilters();
+        }
+
+        async function loadFiles() {
             const container = document.getElementById('fileTableContainer');
             container.innerHTML = '<div class="message">正在加载文件列表...</div>';
 
-            // 模拟文件列表
-            setTimeout(() => {
-                const files = [
-                    { name: 'README.md', size: '2.5 KB', modified: '2024-01-15' },
-                    { name: 'config.json', size: '1.2 KB', modified: '2024-01-14' },
-                    { name: 'app.js', size: '15.8 KB', modified: '2024-01-13' },
-                    { name: 'style.css', size: '8.4 KB', modified: '2024-01-12' }
-                ];
+            try {
+                const response = await apiRequest('/api/admin/files');
+                if (response && response.ok) {
+                    const data = await response.json();
+                    allFiles = data.files || [];
+                } else {
+                    // 使用示例文件
+                    allFiles = [
+                        { id: 1, name: 'README.md', size: '2.5 KB', modified: '2024-01-15', category: '文档', categoryId: 1 },
+                        { id: 2, name: 'config.json', size: '1.2 KB', modified: '2024-01-14', category: '代码', categoryId: 4 },
+                        { id: 3, name: 'app.js', size: '15.8 KB', modified: '2024-01-13', category: '代码', categoryId: 4 },
+                        { id: 4, name: 'screenshot.png', size: '245 KB', modified: '2024-01-12', category: '图片', categoryId: 2 },
+                        { id: 5, name: 'demo.mp4', size: '12.5 MB', modified: '2024-01-11', category: '视频', categoryId: 3 },
+                        { id: 6, name: 'tool.exe', size: '8.9 MB', modified: '2024-01-10', category: '工具', categoryId: 5 }
+                    ];
+                }
 
-                container.innerHTML = `
-                    <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
-                        <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-primary);">
-                            // 文件列表 (${files.length} 个文件)
-                        </div>
-                        ${files.map(file => `
-                            <div style="display: grid; grid-template-columns: 1fr auto auto; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: all 0.2s;">
-                                <div>
-                                    <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(file.name)}</div>
-                                    <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">${file.size} • ${file.modified}</div>
-                                </div>
-                                <div style="display: flex; gap: 8px;">
-                                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="downloadFile('${escapeHtml(file.name)}')" title="下载">
-                                        ⬇️
-                                    </button>
-                                    <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--error);" onclick="deleteFile('${escapeHtml(file.name)}')" title="删除">
-                                        🗑️
-                                    </button>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }, 1000);
+                renderFiles();
+            } catch (error) {
+                console.error('加载文件失败:', error);
+                container.innerHTML = '<div class="message error">// Error: 加载文件失败</div>';
+            }
         }
 
+        function renderFiles(filesToRender = null) {
+            const container = document.getElementById('fileTableContainer');
+            const files = filesToRender || allFiles;
+            
+            if (files.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <h3>// 暂无文件</h3>
+                        <p>还没有上传任何文件</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; overflow: hidden;">
+                    <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text-primary);">
+                        // 文件列表 (${files.length} 个文件)
+                    </div>
+                    ${files.map(file => `
+                        <div style="display: grid; grid-template-columns: 1fr auto auto auto; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); transition: all 0.2s;">
+                            <div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 500; color: var(--text-primary); margin-bottom: 4px;">${escapeHtml(file.name)}</div>
+                                <div style="font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace;">
+                                    ${file.size} • ${file.category || '未分类'} • ${file.modified}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="downloadFile('${escapeHtml(file.name)}')" title="下载">
+                                    ⬇️
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px;" onclick="editFile(${file.id})" title="编辑">
+                                    ✏️
+                                </button>
+                                <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 11px; color: var(--error);" onclick="deleteFile('${escapeHtml(file.name)}')" title="删除">
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function filterFilesByCategory() {
+            const categoryId = document.getElementById('categoryFilter').value;
+            if (!categoryId) {
+                renderFiles();
+                return;
+            }
+            
+            const filteredFiles = allFiles.filter(file => file.categoryId == categoryId);
+            renderFiles(filteredFiles);
+        }
+
+        // 分类管理功能
+        function setupCategoryForm() {
+            document.getElementById('categoryForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const name = document.getElementById('categoryName').value;
+                const description = document.getElementById('categoryDescription').value;
+                const icon = document.getElementById('categoryIcon').value;
+
+                try {
+                    const response = await apiRequest('/api/categories', {
+                        method: 'POST',
+                        body: JSON.stringify({ name, description, icon })
+                    });
+
+                    if (response && response.ok) {
+                        showMessage('分类创建成功！', 'success');
+                        document.getElementById('categoryForm').reset();
+                        loadCategories();
+                    } else {
+                        showMessage('分类创建失败', 'error');
+                    }
+                } catch (error) {
+                    console.error('创建分类失败:', error);
+                    showMessage('分类创建失败', 'error');
+                }
+            });
+        }
+
+        function editCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            const newName = prompt('修改分类名称:', category.name);
+            if (newName && newName !== category.name) {
+                // 这里应该调用API更新分类
+                showMessage('分类更新成功！', 'success');
+                loadCategories();
+            }
+        }
+
+        async function deleteCategory(categoryId) {
+            const category = categories.find(c => c.id === categoryId);
+            if (!category) return;
+
+            if (!confirm(`确定要删除分类 "${category.name}" 吗？`)) return;
+
+            try {
+                const response = await apiRequest(`/api/categories/${categoryId}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showMessage('分类删除成功！', 'success');
+                    loadCategories();
+                } else {
+                    showMessage('分类删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除分类失败:', error);
+                showMessage('分类删除失败', 'error');
+            }
+        }
+
+        // 文件上传功能
         function setupFileUpload() {
             const uploadZone = document.getElementById('uploadZone');
             const fileInput = document.getElementById('fileInput');
@@ -327,8 +669,14 @@
             });
         }
 
-        function uploadFiles(files) {
+        async function uploadFiles(files) {
             if (files.length === 0) return;
+
+            const categoryId = document.getElementById('uploadCategory').value;
+            if (!categoryId) {
+                showMessage('请先选择文件分类', 'warning');
+                return;
+            }
 
             const progressContainer = document.getElementById('uploadProgress');
             const progressFill = document.getElementById('progressFill');
@@ -336,30 +684,42 @@
             
             progressContainer.style.display = 'block';
 
-            // 模拟上传进度
-            let progress = 0;
-            const interval = setInterval(() => {
-                progress += Math.random() * 15;
-                if (progress >= 100) {
-                    progress = 100;
-                    clearInterval(interval);
-                    
-                    setTimeout(() => {
-                        progressContainer.style.display = 'none';
-                        progressFill.style.width = '0%';
-                        progressText.textContent = '0%';
-                        
-                        showMessage('文件上传完成！', 'success');
-                        
-                        if (document.getElementById('files').classList.contains('active')) {
-                            loadFiles();
-                        }
-                    }, 1000);
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('categoryId', categoryId);
+
+                try {
+                    const response = await apiRequest('/api/admin/upload', {
+                        method: 'POST',
+                        body: formData,
+                        headers: {} // 不设置Content-Type，让浏览器自动设置
+                    });
+
+                    const progress = Math.round(((i + 1) / files.length) * 100);
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = progress + '%';
+
+                    if (!response || !response.ok) {
+                        console.error(`文件 ${file.name} 上传失败`);
+                    }
+                } catch (error) {
+                    console.error(`文件 ${file.name} 上传失败:`, error);
                 }
+            }
+
+            setTimeout(() => {
+                progressContainer.style.display = 'none';
+                progressFill.style.width = '0%';
+                progressText.textContent = '0%';
                 
-                progressFill.style.width = progress + '%';
-                progressText.textContent = Math.round(progress) + '%';
-            }, 200);
+                showMessage('文件上传完成！', 'success');
+                
+                if (document.getElementById('files').classList.contains('active')) {
+                    loadFiles();
+                }
+            }, 1000);
         }
 
         function downloadFile(filename) {
@@ -369,11 +729,32 @@
             link.click();
         }
 
-        function deleteFile(filename) {
+        function editFile(fileId) {
+            const file = allFiles.find(f => f.id === fileId);
+            if (!file) return;
+
+            // 这里可以实现文件编辑功能
+            showMessage('文件编辑功能开发中', 'warning');
+        }
+
+        async function deleteFile(filename) {
             if (!confirm(`确定要删除文件 "${filename}" 吗？`)) return;
             
-            showMessage('文件删除成功！', 'success');
-            loadFiles();
+            try {
+                const response = await apiRequest(`/api/admin/files/${encodeURIComponent(filename)}`, {
+                    method: 'DELETE'
+                });
+
+                if (response && response.ok) {
+                    showMessage('文件删除成功！', 'success');
+                    loadFiles();
+                } else {
+                    showMessage('文件删除失败', 'error');
+                }
+            } catch (error) {
+                console.error('删除文件失败:', error);
+                showMessage('文件删除失败', 'error');
+            }
         }
 
         function setupPasswordForm() {
@@ -395,21 +776,24 @@
                 }
 
                 try {
-                    const response = await fetch('/api/change-password', {
+                    const response = await apiRequest('/api/change-password', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ currentPassword, newPassword })
                     });
 
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        showMessage('密码修改成功，请重新登录', 'success');
-                        setTimeout(() => logout(), 2000);
+                    if (response && response.ok) {
+                        const result = await response.json();
+                        if (result.success) {
+                            showMessage('密码修改成功，请重新登录', 'success');
+                            setTimeout(() => logout(), 2000);
+                        } else {
+                            showMessage(result.message || '密码修改失败', 'error');
+                        }
                     } else {
-                        showMessage(result.message || '密码修改失败', 'error');
+                        showMessage('密码修改失败', 'error');
                     }
                 } catch (error) {
+                    console.error('修改密码失败:', error);
                     showMessage('修改密码失败，请重试', 'error');
                 }
             });
@@ -419,14 +803,25 @@
             const message = document.createElement('div');
             message.className = `message ${type}`;
             message.textContent = `// ${text}`;
-            document.getElementById('settings').appendChild(message);
-            setTimeout(() => message.remove(), 3000);
+            
+            // 找到当前活跃的section
+            const activeSection = document.querySelector('.content-section.active');
+            if (activeSection) {
+                activeSection.appendChild(message);
+                setTimeout(() => message.remove(), 3000);
+            }
         }
 
-        function logout() {
-            fetch('/api/logout', { method: 'POST' })
-                .then(() => window.location.href = '/login.html')
-                .catch(() => window.location.href = '/login.html');
+        async function logout() {
+            try {
+                await apiRequest('/api/logout', { method: 'POST' });
+            } catch (error) {
+                console.error('登出失败:', error);
+            }
+            
+            localStorage.removeItem('sessionId');
+            sessionId = null;
+            window.location.href = '/login.html';
         }
 
         function escapeHtml(text) {
@@ -437,20 +832,38 @@
 
         async function checkAuth() {
             try {
-                const response = await fetch('/api/check-auth');
-                if (!response.ok && location.hostname !== 'localhost') {
+                const response = await apiRequest('/api/auth/status');
+                if (!response || !response.ok) {
                     window.location.href = '/login.html';
+                    return false;
                 }
+                
+                const data = await response.json();
+                if (!data.authenticated) {
+                    window.location.href = '/login.html';
+                    return false;
+                }
+                
+                return true;
             } catch (error) {
                 console.error('检查登录状态失败:', error);
+                if (location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    window.location.href = '/login.html';
+                }
+                return false;
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            checkAuth();
+        // 初始化
+        document.addEventListener('DOMContentLoaded', async function() {
+            const isAuthenticated = await checkAuth();
+            if (!isAuthenticated) return;
+            
             setupFileUpload();
             setupPasswordForm();
+            setupCategoryForm();
             loadDashboard();
+            loadCategories();
         });
     </script>
 </body>

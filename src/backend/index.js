@@ -116,9 +116,19 @@ app.post('/api/login', async (c) => {
   }
 });
 
-// 验证会话
+// 验证会话 - 支持多种方式获取session
 app.get('/api/auth/status', async (c) => {
-  const sessionId = c.req.header('X-Session-ID');
+  // 尝试从多个地方获取sessionId
+  let sessionId = c.req.header('X-Session-ID');
+  
+  // 如果没有X-Session-ID头部，尝试从Cookie获取
+  if (!sessionId) {
+    const cookies = c.req.header('Cookie');
+    if (cookies) {
+      const match = cookies.match(/session=([^;]+)/);
+      sessionId = match ? match[1] : null;
+    }
+  }
   
   if (!sessionId || !sessions.has(sessionId)) {
     return c.json({ authenticated: false });
@@ -135,6 +145,12 @@ app.get('/api/auth/status', async (c) => {
     authenticated: true, 
     user: { username: session.username } 
   });
+});
+
+// 添加check-auth别名接口
+app.get('/api/check-auth', async (c) => {
+  // 重定向到auth/status
+  return app.fetch(new Request(c.req.url.replace('/check-auth', '/auth/status'), c.req));
 });
 
 // 登出
