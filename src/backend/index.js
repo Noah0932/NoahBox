@@ -69,9 +69,20 @@ app.post('/api/login', async (c) => {
     }
     
     // 从数据库获取管理员密码
-    const { DB } = c.env;
-    const { results } = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').all();
-    const storedPassword = results.length > 0 ? results[0].password : 'admin123';
+    let storedPassword = 'admin123'; // 默认密码
+    
+    try {
+      const { DB } = c.env;
+      if (DB) {
+        const result = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').first();
+        if (result && result.password) {
+          storedPassword = result.password;
+        }
+      }
+    } catch (dbError) {
+      console.log('Database query failed, using default password:', dbError);
+      // 如果数据库查询失败，使用默认密码
+    }
     
     // 验证管理员账户
     if (username === 'admin' && password === storedPassword) {
@@ -169,8 +180,18 @@ app.post('/api/change-password', requireAuth, async (c) => {
   
   try {
     // 获取当前存储的密码
-    const { results } = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').all();
-    const currentStoredPassword = results.length > 0 ? results[0].password : 'admin123';
+    let currentStoredPassword = 'admin123'; // 默认密码
+    
+    try {
+      if (DB) {
+        const result = await DB.prepare('SELECT password FROM admin_config WHERE id = 1').first();
+        if (result && result.password) {
+          currentStoredPassword = result.password;
+        }
+      }
+    } catch (dbError) {
+      console.log('Database query failed in change-password, using default:', dbError);
+    }
     
     // 验证当前密码
     if (currentPassword !== currentStoredPassword) {
